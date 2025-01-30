@@ -154,12 +154,13 @@ _math_stats_stdev() {
 _math_stats_quantiles() {
     local -i ret=1
     local -ar _one_of_four=('alphabet' 'alligator' 'branch' 'braggart')
+    local -r ___file='*.((txt|md))'
     local -ar arg_specs=(
         ':one-of-four:{__math_complete "${_one_of_four[@]}"}'
         ':custom-arg:{__math_custom_complete ---completion stats quantiles -- positional@1 "${current_word_index}" "$(__math_cursor_index_in_current_word)"}'
         ':custom-deprecated-arg:{__math_custom_complete ---completion stats quantiles -- positional@2}'
         '*:values:'
-        '--file:file:_files -g '\''*.txt *.md'\'''
+        '--file:file:_files -g "${___file}"'
         '--directory:directory:_files -/'
         '--shell:shell:{local -a list;list=(${(f)"$(head -100 '\''/usr/share/dict/words'\'' | tail -50)"});_describe -V "" list}'
         '--custom:custom:{__math_custom_complete ---completion stats quantiles -- --custom "${current_word_index}" "$(__math_cursor_index_in_current_word)"}'

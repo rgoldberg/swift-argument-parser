@@ -192,13 +192,15 @@ extension CommandInfoV0 {
       return ("", nil)
 
     case .file(let extensions):
-      return
-        extensions.isEmpty
-        ? ("_files", nil)
-        : (
-          "_files -g '\\''\(extensions.map { "*.\($0.shellEscapeForSingleQuotedString())" }.joined(separator: " "))'\\''",
-          nil
-        )
+      guard !extensions.isEmpty else {
+        return ("_files", nil)
+      }
+
+      let variableName = variableName(arg)
+      return (
+        "_files -g \"${\(variableName)}\"",
+        "local -r \(variableName)='*.((\(extensions.map { $0.zshEscapeForSingleQuotedFileExtensions() }.joined(separator: "|"))))'"
+      )
 
     case .directory:
       return ("_files -/", nil)
@@ -279,6 +281,21 @@ extension String {
       .replacing(":", with: "\\:")
       .shellEscapeForSingleQuotedString()
   }
+
+  fileprivate func zshEscapeForSingleQuotedFileExtensions() -> String {
+    replacingOccurrences(
+      of: #"[ '$\\]"#,
+      with: #"\\$0"#,
+      options: .regularExpression
+    )
+    .replacingOccurrences(
+      of: #"[|()]"#,
+      with: #"\\\\$0"#,
+      options: .regularExpression
+    )
+    .shellEscapeForSingleQuotedString()
+  }
+
   fileprivate func zshEscapeForSingleQuotedOptionSpec() -> String {
     self
       .replacing("\\", with: "\\\\")
