@@ -44,7 +44,7 @@ end
 
 function __math_tokens
     if test (string split -m 1 -f 1 -- . "$FISH_VERSION") -gt 3
-        commandline --tokens-raw $argv
+        commandline --tokens-raw $argv | string split0
     else
         commandline -o $argv
     end
@@ -114,12 +114,12 @@ complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "mat
 complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "math stats stdev" version' -l 'version' -d 'Show the version.'
 complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "math stats stdev" h help' -s 'h' -l 'help' -d 'Show help information.'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" -eq 1' -fka 'alphabet alligator branch braggart'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" -eq 2' -fka '(__math_custom_completion ---completion stats quantiles -- positional@1 (count (__math_tokens -pc)) (__math_tokens -tC))'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" -eq 2' -fka '(__math_custom_completion ---completion stats quantiles -- positional@1 (count (__math_tokens -pc)) (commandline -tC))'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" -eq 3' -fka '(__math_custom_completion ---completion stats quantiles -- positional@2)'
 complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "math stats quantiles" file' -l 'file' -rfa '(set -l exts \'txt\' \'md\';for p in (string match -e -- \'*/\' (commandline -t);or printf \n)*.{$exts};printf %s\n $p;end;__fish_complete_directories (commandline -t) \'\')'
 complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "math stats quantiles" directory' -l 'directory' -rfa '(__math_complete_directories)'
 complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "math stats quantiles" shell' -l 'shell' -rfka '(head -100 \'/usr/share/dict/words\' | tail -50)'
-complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "math stats quantiles" custom' -l 'custom' -rfka '(__math_custom_completion ---completion stats quantiles -- --custom (count (__math_tokens -pc)) (__math_tokens -tC))'
+complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "math stats quantiles" custom' -l 'custom' -rfka '(__math_custom_completion ---completion stats quantiles -- --custom (count (__math_tokens -pc)) (commandline -tC))'
 complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "math stats quantiles" custom-deprecated' -l 'custom-deprecated' -rfka '(__math_custom_completion ---completion stats quantiles -- --custom-deprecated)'
 complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "math stats quantiles" version' -l 'version' -d 'Show the version.'
 complete -c 'math' -n '__math_should_offer_completions_for_flags_or_options "math stats quantiles" h help' -s 'h' -l 'help' -d 'Show help information.'

@@ -47,7 +47,7 @@ extension CommandInfoV0 {
 
     function \(tokensFunctionName)
         if test (string split -m 1 -f 1 -- . "$FISH_VERSION") -gt 3
-            commandline --tokens-raw $argv
+            commandline --tokens-raw $argv | string split0
         else
             commandline -o $argv
         end
@@ -227,7 +227,7 @@ extension CommandInfoV0 {
         """
         -\(r)fka '(\
         \(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)) \
-        (count (\(tokensFunctionName) -pc)) (\(tokensFunctionName) -tC)\
+        (count (\(tokensFunctionName) -pc)) (commandline -tC)\
         )'
         """
       case .customDeprecated:
