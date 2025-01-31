@@ -82,11 +82,11 @@ end
 
 complete -c 'base-test' -f
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" name' -l 'name' -d 'The user\'s name.' -rfka ''
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" kind' -l 'kind' -rfka 'one two custom-three'
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" other-kind' -l 'other-kind' -rfka 'b1_fish b2_fish b3_fish'
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" kind' -l 'kind' -rfka '\'one\' \'two\' \'custom-three\''
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" other-kind' -l 'other-kind' -rfka '\'b1_fish\' \'b2_fish\' \'b3_fish\''
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" path1' -l 'path1' -rF
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" path2' -l 'path2' -rF
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" path3' -l 'path3' -rfka 'c1_fish c2_fish c3_fish'
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" path3' -l 'path3' -rfka '\'c1_fish\' \'c2_fish\' \'c3_fish\''
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" one' -l 'one'
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" two' -l 'two'
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" custom-three' -l 'custom-three'
