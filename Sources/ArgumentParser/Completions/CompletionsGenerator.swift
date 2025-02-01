@@ -136,6 +136,17 @@ struct CompletionsGenerator {
 }
 
 extension String {
+  func shellEscapeForUnquotedString(iterationCount: UInt64 = 1) -> Self {
+    iterationCount == 0
+      ? self
+      : replacingOccurrences(
+        of: #"[$`'"\\;&|(){}\[\]<>~=?*#^%! \t\n]"#,
+        with: #"\\$0"#,
+        options: .regularExpression
+      )
+      .shellEscapeForUnquotedString(iterationCount: iterationCount - 1)
+  }
+
   func shellEscapeForSingleQuotedString(iterationCount: UInt64 = 1) -> Self {
     iterationCount == 0
       ? self
