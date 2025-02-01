@@ -356,7 +356,10 @@ extension CommandInfoV0 {
     case .list(let list):
       return """
         \(addCompletionsFunctionName) -W\
-         '\(list.map { $0.shellEscapeForSingleQuotedString() }.joined(separator: "'$'\\n''"))'
+         '\(
+          list.map { $0.shellEscapeForUnquotedString().shellEscapeForSingleQuotedString() }
+          .joined(separator: "'$'\\n''")
+         )'
 
         """
 
