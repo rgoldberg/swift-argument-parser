@@ -49,7 +49,6 @@ extension CommandInfoV0 {
     let dollarOne = isRootCommand ? "1" : "$1"
     let subcommandArgument = isRootCommand ? "2" : "$(($1+1))"
   
-    // Include 'help' in the list of subcommands for the root command.
     let subcommands = (self.subcommands ?? [])
       .filter { $0.shouldDisplay }
 
