@@ -139,8 +139,6 @@ extension CommandInfoV0 {
   fileprivate func bashCompletionKeys() -> [String] {
     var result = [String]()
     for argument in self.arguments ?? [] {
-      // Skip hidden arguments.
-      guard argument.shouldDisplay else { continue }
       result.append(contentsOf: argument.bashCompletionKeys())
     }
     return result
@@ -167,8 +165,6 @@ extension CommandInfoV0 {
   fileprivate func bashOptionCompletions() -> [String] {
     var result = [String]()
     for argument in self.arguments ?? [] {
-      // Skip hidden arguments.
-      guard argument.shouldDisplay else { continue }
       // Flags don't take a value, so we don't provide follow-on completions.
       guard argument.kind != .flag else { continue }
       // Skip if no keys.
@@ -188,7 +184,7 @@ extension CommandInfoV0 {
 extension ArgumentInfoV0 {
   /// Returns the different completion names for this argument.
   fileprivate func bashCompletionKeys() -> [String] {
-    (self.names ?? []).map { $0.commonCompletionSynopsisString() }
+    shouldDisplay ? (self.names ?? []).map { $0.commonCompletionSynopsisString() } : []
   }
 
   // FIXME: determine if this can be combined with bashOptionCompletionValues
