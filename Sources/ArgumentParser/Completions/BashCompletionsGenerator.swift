@@ -38,7 +38,7 @@ extension ToolInfoV0 {
 }
 
 extension CommandInfoV0 {
-  fileprivate var bashCommandContext: [String] {
+  private var bashCommandContext: [String] {
     (superCommands ?? []) + [commandName]
   }
 
@@ -149,7 +149,7 @@ extension CommandInfoV0 {
   /// Returns additional top-level completions from positional arguments.
   ///
   /// These consist of completions that are defined as `.list` or `.custom`.
-  fileprivate var bashPositionalCompletions: [String] {
+  private var bashPositionalCompletions: [String] {
     (arguments ?? []).compactMap { argument in
       argument.shouldDisplay && argument.kind == .positional
       ? argument.bashPositionalCompletionValues(command: self)
@@ -158,7 +158,7 @@ extension CommandInfoV0 {
   }
 
   /// Returns the case-matching statements for supplying completions after an option or flag.
-  fileprivate var bashOptionCompletions: [String] {
+  private var bashOptionCompletions: [String] {
     (arguments ?? []).compactMap { argument in
       guard argument.kind != .flag else { return nil }
       let keys = argument.bashCompletionKeys
