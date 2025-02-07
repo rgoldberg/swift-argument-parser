@@ -56,7 +56,7 @@ extension CommandInfoV0 {
     let subcommandArgument = isRootCommand ? "2" : "$(($1+1))"
 
     let subcommands = (subcommands ?? [])
-      .filter { $0.shouldDisplay }
+      .filter(\.shouldDisplay)
 
     // Generate the words that are available at the "top level" of this
     // command — these are the dash-prefixed names of options and flags as well
