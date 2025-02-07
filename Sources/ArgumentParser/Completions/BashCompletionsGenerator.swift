@@ -222,7 +222,7 @@ extension ArgumentInfoV0 {
   ) -> String? {
     precondition(self.kind == .option)
 
-  switch self.completionKind {
+    switch self.completionKind {
     case .none:
       return nil
 
