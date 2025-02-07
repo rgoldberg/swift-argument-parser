@@ -175,11 +175,9 @@ extension CommandInfoV0 {
       // Skip if no keys.
       let keys = argument.bashCompletionKeys()
       guard !keys.isEmpty else { continue }
-      // Skip if no completions.
-      guard let completionValues = argument.bashOptionCompletionValues(command: self) else { continue }
       result.append("""
         \(keys.joined(separator: "|")))
-        \(completionValues.indentingEachLine(by: 4))
+        \(argument.bashOptionCompletionValues(command: self).indentingEachLine(by: 4))
             return
         ;;
         """)
@@ -219,12 +217,12 @@ extension ArgumentInfoV0 {
   /// Uses bash-completion for file and directory values if available.
   fileprivate func bashOptionCompletionValues(
     command: CommandInfoV0
-  ) -> String? {
+  ) -> String {
     precondition(self.kind == .option)
 
     switch self.completionKind {
     case .none:
-      return nil
+      return ""
 
     case .file(let extensions) where extensions.isEmpty:
       return """

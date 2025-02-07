@@ -15,6 +15,10 @@ _base_test() {
         return
     fi
     case $prev in
+        --name)
+
+            return
+        ;;
         --kind)
             COMPREPLY=( $(compgen -W "one two custom-three" -- "$cur") )
             return
@@ -41,6 +45,14 @@ _base_test() {
         ;;
         --path3)
             COMPREPLY=( $(compgen -W "c1_bash c2_bash c3_bash" -- "$cur") )
+            return
+        ;;
+        --rep1)
+
+            return
+        ;;
+        -r|--rep2)
+
             return
         ;;
     esac
@@ -75,6 +87,12 @@ _base_test_escaped_command() {
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
         return
     fi
+    case $prev in
+        --one)
+
+            return
+        ;;
+    esac
     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
 }
 _base_test_help() {
