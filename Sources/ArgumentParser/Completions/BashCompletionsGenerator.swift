@@ -55,8 +55,7 @@ extension CommandInfoV0 {
     let dollarOne = isRootCommand ? "1" : "$1"
     let subcommandArgument = isRootCommand ? "2" : "$(($1+1))"
 
-    let subcommands = (subcommands ?? [])
-      .filter(\.shouldDisplay)
+    let subcommands = (subcommands ?? []).filter(\.shouldDisplay)
 
     // Generate the words that are available at the "top level" of this
     // command — these are the dash-prefixed names of options and flags as well
@@ -135,10 +134,7 @@ extension CommandInfoV0 {
 
     """
 
-    return result +
-      subcommands
-      .map(\.bashCompletionFunction)
-      .joined()
+    return result + subcommands.map(\.bashCompletionFunction).joined()
   }
 
   /// Returns the option and flag names that can be top-level completions.
@@ -180,9 +176,7 @@ extension ArgumentInfoV0 {
   }
 
   // FIXME: determine if this can be combined with bashOptionCompletionValues
-  fileprivate func bashPositionalCompletionValues(
-    command: CommandInfoV0
-  ) -> String? {
+  fileprivate func bashPositionalCompletionValues(command: CommandInfoV0) -> String? {
     precondition(kind == .positional)
 
     switch completionKind {
@@ -202,9 +196,7 @@ extension ArgumentInfoV0 {
   /// Returns the bash completions that can follow this argument's `--name`.
   ///
   /// Uses bash-completion for file and directory values if available.
-  fileprivate func bashOptionCompletionValues(
-    command: CommandInfoV0
-  ) -> String {
+  fileprivate func bashOptionCompletionValues(command: CommandInfoV0) -> String {
     precondition(kind == .option)
 
     switch completionKind {
