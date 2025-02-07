@@ -14,14 +14,14 @@ import ArgumentParserToolInfo
 struct BashCompletionsGenerator {
   /// Generates a Bash completion script for the given command.
   static func generateCompletionScript(_ type: ParsableCommand.Type) -> String {
-    return ToolInfoV0(commandStack: [type]).bashCompletionScript()
+    ToolInfoV0(commandStack: [type]).bashCompletionScript()
   }
 }
 
 extension ToolInfoV0 {
   fileprivate func bashCompletionScript() -> String {
     // TODO: Add a check to see if the command is installed where we expect?
-    return """
+    """
       #!/bin/bash
       
       \(self.command.bashCompletionFunction())
@@ -33,11 +33,11 @@ extension ToolInfoV0 {
 
 extension CommandInfoV0 {
   fileprivate func bashCommandContext() -> [String] {
-    return (self.superCommands ?? []) + [self.commandName]
+    (self.superCommands ?? []) + [self.commandName]
   }
 
   fileprivate func bashCompletionFunctionName() -> String {
-    return "_" + self.bashCommandContext().joined(separator: "_").makeSafeFunctionName
+    "_" + self.bashCommandContext().joined(separator: "_").makeSafeFunctionName
   }
 
   /// Generates a Bash completion function.
@@ -189,7 +189,7 @@ extension CommandInfoV0 {
 extension ArgumentInfoV0 {
   /// Returns the different completion names for this argument.
   fileprivate func bashCompletionKeys() -> [String] {
-    return (self.names ?? []).map { $0.commonCompletionSynopsisString() }
+    (self.names ?? []).map { $0.commonCompletionSynopsisString() }
   }
 
   // FIXME: determine if this can be combined with bashOptionCompletionValues
