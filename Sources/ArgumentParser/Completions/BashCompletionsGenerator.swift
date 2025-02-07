@@ -137,47 +137,33 @@ extension CommandInfoV0 {
 
   /// Returns the option and flag names that can be top-level completions.
   fileprivate func bashCompletionKeys() -> [String] {
-    var result = [String]()
-    for argument in self.arguments ?? [] {
-      result.append(contentsOf: argument.bashCompletionKeys())
-    }
-    return result
+    (arguments ?? []).flatMap { $0.bashCompletionKeys() }
   }
 
   /// Returns additional top-level completions from positional arguments.
   ///
   /// These consist of completions that are defined as `.list` or `.custom`.
   fileprivate func bashPositionalCompletions() -> [String] {
-    var result = [String]()
-    for argument in self.arguments ?? [] {
-      // Skip hidden arguments.
-      guard argument.shouldDisplay else { continue }
-      // Only select positional arguments.
-      guard argument.kind == .positional else { continue }
-      // Skip if no completions.
-      guard let completionValues = argument.bashPositionalCompletionValues(command: self) else { continue }
-      result.append(completionValues)
+    (arguments ?? []).compactMap { argument in
+      argument.shouldDisplay && argument.kind == .positional
+      ? argument.bashPositionalCompletionValues(command: self)
+      : nil
     }
-    return result
   }
 
   /// Returns the case-matching statements for supplying completions after an option or flag.
   fileprivate func bashOptionCompletions() -> [String] {
-    var result = [String]()
-    for argument in self.arguments ?? [] {
-      // Flags don't take a value, so we don't provide follow-on completions.
-      guard argument.kind != .flag else { continue }
-      // Skip if no keys.
+    (arguments ?? []).compactMap { argument in
+      guard argument.kind != .flag else { return nil }
       let keys = argument.bashCompletionKeys()
-      guard !keys.isEmpty else { continue }
-      result.append("""
+      guard !keys.isEmpty else { return nil }
+      return """
         \(keys.joined(separator: "|")))
         \(argument.bashOptionCompletionValues(command: self).indentingEachLine(by: 4))
             return
         ;;
-        """)
+        """
     }
-    return result
   }
 }
 
