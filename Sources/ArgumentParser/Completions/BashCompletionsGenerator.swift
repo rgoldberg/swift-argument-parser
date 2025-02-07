@@ -29,9 +29,9 @@ extension ToolInfoV0 {
     // TODO: Add a check to see if the command is installed where we expect?
     """
       #!/bin/bash
-      
+
       \(self.command.bashCompletionFunction())
-      
+
       complete -F \(self.command.bashCompletionFunctionName()) \(self.command.commandName)
       """
   }
@@ -54,7 +54,7 @@ extension CommandInfoV0 {
     let isRootCommand = (self.superCommands ?? []).count == 0
     let dollarOne = isRootCommand ? "1" : "$1"
     let subcommandArgument = isRootCommand ? "2" : "$(($1+1))"
-  
+
     let subcommands = (self.subcommands ?? [])
       .filter { $0.shouldDisplay }
 
@@ -121,13 +121,13 @@ extension CommandInfoV0 {
               \(functionName)_\(subcommand.commandName) \(subcommandArgument)
               return
               ;;
-          
+
           """
           .indentingEachLine(by: 8)
       }
       result += "    esac\n"
     }
-    
+
     // Finish off the function.
     result += """
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
