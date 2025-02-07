@@ -20,35 +20,35 @@ import ArgumentParserToolInfo
 struct BashCompletionsGenerator {
   /// Generates a Bash completion script for the given command.
   static func generateCompletionScript(_ type: ParsableCommand.Type) -> String {
-    ToolInfoV0(commandStack: [type]).bashCompletionScript()
+    ToolInfoV0(commandStack: [type]).bashCompletionScript
   }
 }
 
 extension ToolInfoV0 {
-  fileprivate func bashCompletionScript() -> String {
+  fileprivate var bashCompletionScript: String {
     // TODO: Add a check to see if the command is installed where we expect?
     """
       #!/bin/bash
 
-      \(command.bashCompletionFunction())
+      \(command.bashCompletionFunction)
 
-      complete -F \(command.bashCompletionFunctionName()) \(command.commandName)
+      complete -F \(command.bashCompletionFunctionName) \(command.commandName)
       """
   }
 }
 
 extension CommandInfoV0 {
-  fileprivate func bashCommandContext() -> [String] {
+  fileprivate var bashCommandContext: [String] {
     (superCommands ?? []) + [commandName]
   }
 
-  fileprivate func bashCompletionFunctionName() -> String {
-    "_" + bashCommandContext().joined(separator: "_").makeSafeFunctionName
+  fileprivate var bashCompletionFunctionName: String {
+    "_" + bashCommandContext.joined(separator: "_").makeSafeFunctionName
   }
 
   /// Generates a Bash completion function.
-  fileprivate func bashCompletionFunction() -> String {
-    let functionName = bashCompletionFunctionName()
+  fileprivate var bashCompletionFunction: String {
+    let functionName = bashCompletionFunctionName
 
     // The root command gets a different treatment for the parsing index.
     let isRootCommand = (superCommands ?? []).count == 0
@@ -61,11 +61,11 @@ extension CommandInfoV0 {
     // Generate the words that are available at the "top level" of this
     // command — these are the dash-prefixed names of options and flags as well
     // as all the subcommand names.
-    let completionKeys = bashCompletionKeys() + subcommands.map { $0.commandName }
+    let completionKeys = bashCompletionKeys + subcommands.map(\.commandName)
 
     // Generate additional top-level completions — these are completion lists
     // or custom function-based word lists from positional arguments.
-    let additionalCompletions = bashPositionalCompletions()
+    let additionalCompletions = bashPositionalCompletions
 
     // Start building the resulting function code.
     var result = "\(functionName)() {\n"
@@ -101,7 +101,7 @@ extension CommandInfoV0 {
 
     // Generate the case pattern-matching statements for option values.
     // If there aren't any, skip the case block altogether.
-    let optionHandlers = bashOptionCompletions().joined(separator: "\n")
+    let optionHandlers = bashOptionCompletions.joined(separator: "\n")
     if !optionHandlers.isEmpty {
       result += """
       case $prev in
@@ -137,19 +137,19 @@ extension CommandInfoV0 {
 
     return result +
       subcommands
-      .map { $0.bashCompletionFunction() }
+      .map(\.bashCompletionFunction)
       .joined()
   }
 
   /// Returns the option and flag names that can be top-level completions.
-  fileprivate func bashCompletionKeys() -> [String] {
-    (arguments ?? []).flatMap { $0.bashCompletionKeys() }
+  fileprivate var bashCompletionKeys: [String] {
+    (arguments ?? []).flatMap(\.bashCompletionKeys)
   }
 
   /// Returns additional top-level completions from positional arguments.
   ///
   /// These consist of completions that are defined as `.list` or `.custom`.
-  fileprivate func bashPositionalCompletions() -> [String] {
+  fileprivate var bashPositionalCompletions: [String] {
     (arguments ?? []).compactMap { argument in
       argument.shouldDisplay && argument.kind == .positional
       ? argument.bashPositionalCompletionValues(command: self)
@@ -158,10 +158,10 @@ extension CommandInfoV0 {
   }
 
   /// Returns the case-matching statements for supplying completions after an option or flag.
-  fileprivate func bashOptionCompletions() -> [String] {
+  fileprivate var bashOptionCompletions: [String] {
     (arguments ?? []).compactMap { argument in
       guard argument.kind != .flag else { return nil }
-      let keys = argument.bashCompletionKeys()
+      let keys = argument.bashCompletionKeys
       guard !keys.isEmpty else { return nil }
       return """
         \(keys.joined(separator: "|")))
@@ -175,7 +175,7 @@ extension CommandInfoV0 {
 
 extension ArgumentInfoV0 {
   /// Returns the different completion names for this argument.
-  fileprivate func bashCompletionKeys() -> [String] {
+  fileprivate var bashCompletionKeys: [String] {
     shouldDisplay ? (names ?? []).map { $0.commonCompletionSynopsisString() } : []
   }
 
