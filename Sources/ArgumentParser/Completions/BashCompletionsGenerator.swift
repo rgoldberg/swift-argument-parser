@@ -9,7 +9,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+#if swift(>=5.11)
+internal import ArgumentParserToolInfo
+#elseif swift(>=5.10)
 import ArgumentParserToolInfo
+#else
+@_implementationOnly import ArgumentParserToolInfo
+#endif
 
 struct BashCompletionsGenerator {
   /// Generates a Bash completion script for the given command.
