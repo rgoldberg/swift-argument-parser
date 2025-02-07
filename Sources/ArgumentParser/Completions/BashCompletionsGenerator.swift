@@ -30,42 +30,42 @@ extension ToolInfoV0 {
     """
       #!/bin/bash
 
-      \(self.command.bashCompletionFunction())
+      \(command.bashCompletionFunction())
 
-      complete -F \(self.command.bashCompletionFunctionName()) \(self.command.commandName)
+      complete -F \(command.bashCompletionFunctionName()) \(command.commandName)
       """
   }
 }
 
 extension CommandInfoV0 {
   fileprivate func bashCommandContext() -> [String] {
-    (self.superCommands ?? []) + [self.commandName]
+    (superCommands ?? []) + [commandName]
   }
 
   fileprivate func bashCompletionFunctionName() -> String {
-    "_" + self.bashCommandContext().joined(separator: "_").makeSafeFunctionName
+    "_" + bashCommandContext().joined(separator: "_").makeSafeFunctionName
   }
 
   /// Generates a Bash completion function.
   fileprivate func bashCompletionFunction() -> String {
-    let functionName = self.bashCompletionFunctionName()
+    let functionName = bashCompletionFunctionName()
 
     // The root command gets a different treatment for the parsing index.
-    let isRootCommand = (self.superCommands ?? []).count == 0
+    let isRootCommand = (superCommands ?? []).count == 0
     let dollarOne = isRootCommand ? "1" : "$1"
     let subcommandArgument = isRootCommand ? "2" : "$(($1+1))"
 
-    let subcommands = (self.subcommands ?? [])
+    let subcommands = (subcommands ?? [])
       .filter { $0.shouldDisplay }
 
     // Generate the words that are available at the "top level" of this
     // command — these are the dash-prefixed names of options and flags as well
     // as all the subcommand names.
-    let completionKeys = self.bashCompletionKeys() + subcommands.map { $0.commandName }
+    let completionKeys = bashCompletionKeys() + subcommands.map { $0.commandName }
 
     // Generate additional top-level completions — these are completion lists
     // or custom function-based word lists from positional arguments.
-    let additionalCompletions = self.bashPositionalCompletions()
+    let additionalCompletions = bashPositionalCompletions()
 
     // Start building the resulting function code.
     var result = "\(functionName)() {\n"
@@ -101,7 +101,7 @@ extension CommandInfoV0 {
 
     // Generate the case pattern-matching statements for option values.
     // If there aren't any, skip the case block altogether.
-    let optionHandlers = self.bashOptionCompletions().joined(separator: "\n")
+    let optionHandlers = bashOptionCompletions().joined(separator: "\n")
     if !optionHandlers.isEmpty {
       result += """
       case $prev in
@@ -176,16 +176,16 @@ extension CommandInfoV0 {
 extension ArgumentInfoV0 {
   /// Returns the different completion names for this argument.
   fileprivate func bashCompletionKeys() -> [String] {
-    shouldDisplay ? (self.names ?? []).map { $0.commonCompletionSynopsisString() } : []
+    shouldDisplay ? (names ?? []).map { $0.commonCompletionSynopsisString() } : []
   }
 
   // FIXME: determine if this can be combined with bashOptionCompletionValues
   fileprivate func bashPositionalCompletionValues(
     command: CommandInfoV0
   ) -> String? {
-    precondition(self.kind == .positional)
+    precondition(kind == .positional)
 
-    switch self.completionKind {
+    switch completionKind {
     case .none, .file, .directory:
       // FIXME: this doesn't work
       return nil
@@ -195,7 +195,7 @@ extension ArgumentInfoV0 {
       return "$(\(command))"
     case .custom:
       // Generate a call back into the command to retrieve a completions list
-      return #"$("${COMP_WORDS[0]}" \#(self.commonCustomCompletionCall(command: command)) "${COMP_WORDS[@]}")"#
+      return #"$("${COMP_WORDS[0]}" \#(commonCustomCompletionCall(command: command)) "${COMP_WORDS[@]}")"#
     }
   }
 
@@ -205,9 +205,9 @@ extension ArgumentInfoV0 {
   fileprivate func bashOptionCompletionValues(
     command: CommandInfoV0
   ) -> String {
-    precondition(self.kind == .option)
+    precondition(kind == .option)
 
-    switch self.completionKind {
+    switch completionKind {
     case .none:
       return ""
 
@@ -253,7 +253,7 @@ extension ArgumentInfoV0 {
 
     case .custom:
       // Generate a call back into the command to retrieve a completions list
-      return #"COMPREPLY=( $(compgen -W "$("${COMP_WORDS[0]}" \#(self.commonCustomCompletionCall(command: command)) "${COMP_WORDS[@]}")" -- "$cur") )"#
+      return #"COMPREPLY=( $(compgen -W "$("${COMP_WORDS[0]}" \#(commonCustomCompletionCall(command: command)) "${COMP_WORDS[@]}")" -- "$cur") )"#
     }
   }
 }
