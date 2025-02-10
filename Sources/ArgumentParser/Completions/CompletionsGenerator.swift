@@ -144,6 +144,17 @@ extension String {
         .shellEscapeForSingleQuotedString(iterationCount: iterationCount - 1)
   }
 
+  func shellEscapeForDoubleQuotedString(iterationCount: UInt64 = 1) -> Self {
+    iterationCount == 0
+      ? self
+      : replacingOccurrences(
+        of: #"[$`"\\]"#,
+        with: #"\\$0"#,
+        options: .regularExpression
+      )
+      .shellEscapeForDoubleQuotedString(iterationCount: iterationCount - 1)
+  }
+
   func shellEscapeForVariableName() -> Self {
     self.replacing("-", with: "_")
   }

@@ -318,6 +318,19 @@ extension String {
         .replacing("'", with: "\\'")
         .fishEscapeForSingleQuotedString(iterationCount: iterationCount - 1)
   }
+
+  fileprivate func fishEscapeForDoubleQuotedString(
+    iterationCount: UInt64 = 1
+  ) -> Self {
+    iterationCount == 0
+      ? self
+      : replacingOccurrences(
+        of: #"[$"\\]"#,
+        with: #"'\\$0"#,
+        options: .regularExpression
+      )
+      .fishEscapeForDoubleQuotedString(iterationCount: iterationCount - 1)
+  }
 }
 
 private let separator = " "
