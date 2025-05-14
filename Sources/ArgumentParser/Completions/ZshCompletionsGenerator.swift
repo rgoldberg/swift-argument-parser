@@ -27,16 +27,26 @@ extension CommandInfoV0 {
     #compdef \(commandName)
 
     \(completeFunctionName)() {
+        local -r complete="${1}"
+        shift
         local -ar non_empty_completions=("${@:#(|:*)}")
         local -ar empty_completions=("${(M)@:#(|:*)}")
-        _describe -V '' non_empty_completions -- empty_completions -P $'\\'\\''
+        if [[ -n "${complete}" ]]; then
+            eval "${complete}"
+        else
+            _describe -V '' non_empty_completions -- empty_completions -P $'\\'\\''
+        fi
     }
 
     \(customCompleteFunctionName)() {
-        local -a completions
-        completions=("${(@f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
-        if [[ "${#completions[@]}" -gt 1 ]]; then
-            \(completeFunctionName) "${completions[@]:0:-1}"
+        local -r complete="${1}"
+        shift
+        if ((${#})); then
+            local -a completions
+            completions=("${(@f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
+            \(completeFunctionName) "${complete}" "${completions[@]:0:-1}"
+        else
+            \(completeFunctionName) "${complete}"
         fi
     }
 
@@ -206,7 +216,7 @@ extension CommandInfoV0 {
     case .list(let list):
       let variableName = variableName(arg)
       return (
-        "{\(completeFunctionName) \"${\(variableName)[@]}\"}",
+        "{\(completeFunctionName) \"\" \"${\(variableName)[@]}\"}",
         "local -ar \(variableName)=(\(list.map { "'\($0.shellEscapeForSingleQuotedString())'" }.joined(separator: " ")))"
       )
 
@@ -216,15 +226,29 @@ extension CommandInfoV0 {
         nil
       )
 
-    case .custom, .customAsync:
+    case .custom(
+      let shellScript,
+      let shouldRequestCompletionCandidatesFromSwift
+    ),
+      .customAsync(
+        let shellScript,
+        let shouldRequestCompletionCandidatesFromSwift
+      ):
+      let variableName = variableName(arg)
       return (
-        "{\(customCompleteFunctionName) \(arg.commonCustomCompletionCall(command: self)) \"${current_word_index}\" \"$(\(cursorIndexInCurrentWordFunctionName))\"}",
-        nil
+        """
+        {\(customCompleteFunctionName) "${\(variableName)}"\(
+          shouldRequestCompletionCandidatesFromSwift
+            ? " \(arg.commonCustomCompletionCall(command: self)) \"${current_word_index}\" \"$(\(cursorIndexInCurrentWordFunctionName))\""
+            : ""
+        )}
+        """,
+        "local -r \(variableName)='\(shellScript.shellEscapeForSingleQuotedString())'"
       )
 
     case .customDeprecated:
       return (
-        "{\(customCompleteFunctionName) \(arg.commonCustomCompletionCall(command: self))}",
+        "{\(customCompleteFunctionName) \"\" \(arg.commonCustomCompletionCall(command: self))}",
         nil
       )
     }

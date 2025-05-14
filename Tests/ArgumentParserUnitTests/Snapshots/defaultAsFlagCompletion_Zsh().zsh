@@ -1,16 +1,26 @@
 #compdef defaultasflag-test
 
 __defaultasflag-test_complete() {
+    local -r complete="${1}"
+    shift
     local -ar non_empty_completions=("${@:#(|:*)}")
     local -ar empty_completions=("${(M)@:#(|:*)}")
-    _describe -V '' non_empty_completions -- empty_completions -P $'\'\''
+    if [[ -n "${complete}" ]]; then
+        eval "${complete}"
+    else
+        _describe -V '' non_empty_completions -- empty_completions -P $'\'\''
+    fi
 }
 
 __defaultasflag-test_custom_complete() {
-    local -a completions
-    completions=("${(@f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
-    if [[ "${#completions[@]}" -gt 1 ]]; then
-        __defaultasflag-test_complete "${completions[@]:0:-1}"
+    local -r complete="${1}"
+    shift
+    if ((${#})); then
+        local -a completions
+        completions=("${(@f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
+        __defaultasflag-test_complete "${complete}" "${completions[@]:0:-1}"
+    else
+        __defaultasflag-test_complete "${complete}"
     fi
 }
 
@@ -45,7 +55,7 @@ _defaultasflag-test() {
         '--bin-path:bin-path:_files -/'
         '--count:count:'
         '--verbose:verbose:'
-        '--log-level:log-level:{__defaultasflag-test_complete "${___log_level[@]}"}'
+        '--log-level:log-level:{__defaultasflag-test_complete "" "${___log_level[@]}"}'
         '--help'
         ':input:_files'
         '(-h --help)'{-h,--help}'[Show help information.]'

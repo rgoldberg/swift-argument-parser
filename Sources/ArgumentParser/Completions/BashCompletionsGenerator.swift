@@ -366,22 +366,34 @@ extension CommandInfoV0 {
 
         """
 
-    case .custom, .customAsync:
-      return """
-        \(addCompletionsFunctionName) -W\
-         "$(\(customCompleteFunctionName) \(arg.commonCustomCompletionCall(command: self))\
-         "${COMP_CWORD}"\
-         "$(\(cursorIndexInCurrentWordFunctionName))")"
+    case .custom(
+      let shellScript,
+      let shouldRequestCompletionCandidatesFromSwift
+    ),
+      .customAsync(
+        let shellScript,
+        let shouldRequestCompletionCandidatesFromSwift
+      ):
+      return shellScript.isEmpty
+        ? "\(addCompletionsFunctionName) -W \(customCompleteCall(for: arg))\n"
+        : """
+        \(shouldRequestCompletionCandidatesFromSwift ? "local -ar completions=(\(customCompleteCall(for: arg)))\n" : "")\
+        eval '\(shellScript.shellEscapeForSingleQuotedString())'
 
         """
 
     case .customDeprecated:
-      return """
-        \(addCompletionsFunctionName) -W\
-         "$(\(customCompleteFunctionName) \(arg.commonCustomCompletionCall(command: self)))"
-
-        """
+      return
+        "\(addCompletionsFunctionName) -W \"$(\(customCompleteCallPrefix(for: arg)))\"\n"
     }
+  }
+
+  private func customCompleteCall(for arg: ArgumentInfoV0) -> String {
+    "\"$(\(customCompleteCallPrefix(for: arg)) \"${COMP_CWORD}\" \"$(\(cursorIndexInCurrentWordFunctionName))\")\""
+  }
+
+  private func customCompleteCallPrefix(for arg: ArgumentInfoV0) -> String {
+    "\(customCompleteFunctionName) \(arg.commonCustomCompletionCall(command: self))"
   }
 
   private var cursorIndexInCurrentWordFunctionName: String {

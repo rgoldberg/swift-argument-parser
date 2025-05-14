@@ -223,12 +223,25 @@ extension CommandInfoV0 {
         "-\(r)fa '(\(completeDirectoriesFunctionName))'"
       case .shellCommand(let shellCommand):
         "-\(r)fka '(\(shellCommand.fishEscapeForSingleQuotedString()))'"
-      case .custom, .customAsync:
+      case .custom(
+        let shellScript,
+        let shouldRequestCompletionCandidatesFromSwift
+      ),
+        .customAsync(
+          let shellScript,
+          let shouldRequestCompletionCandidatesFromSwift
+        ):
         """
-        -\(r)fka '(\
-        \(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)) \
-        (count (\(tokensFunctionName) -pc)) (\(tokensFunctionName) -tC)\
-        )'
+        -\(r)fka '(\(
+          shouldRequestCompletionCandidatesFromSwift
+            ? """
+              \(shellScript.isEmpty ? "" : "set -l completions (")\
+              \(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)) \
+              (count (\(tokensFunctionName) -pc)) (\(tokensFunctionName) -tC)\
+              \(shellScript.isEmpty ? "" : ");")
+              """
+            : ""
+        )\(shellScript.fishEscapeForSingleQuotedString()))'
         """
       case .customDeprecated:
         "-\(r)fka '(\(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)))'"

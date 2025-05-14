@@ -200,10 +200,18 @@ extension ArgumentInfoV0.CompletionKindV0 {
       self = .directory
     case .shellCommand(let command):
       self = .shellCommand(command: command)
-    case .custom(_):
-      self = .custom
-    case .customAsync(_):
-      self = .customAsync
+    case .custom(let shellScript, let completionCandidatesFromSwift):
+      self = .custom(
+        shellScript: shellScript,
+        shouldRequestCompletionCandidatesFromSwift:
+          completionCandidatesFromSwift != nil
+      )
+    case .customAsync(let shellScript, let completionCandidatesFromSwift):
+      self = .customAsync(
+        shellScript: shellScript,
+        shouldRequestCompletionCandidatesFromSwift:
+          completionCandidatesFromSwift != nil
+      )
     case .customDeprecated(_):
       self = .customDeprecated
     }

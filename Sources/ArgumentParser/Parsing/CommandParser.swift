@@ -366,7 +366,8 @@ extension CommandParser {
           try customCompleteSync(argument, forArguments: arguments)
         {
           completions = syncCompletions
-        } else if case .customAsync(let complete) = argument.completion.kind {
+        } else if case .customAsync(_, let complete?) = argument.completion.kind
+        {
           let (arguments, index, prefix) =
             try parseCustomCompletionArguments(from: arguments)
           completions = await complete(arguments, index, prefix)
@@ -567,10 +568,10 @@ extension CommandParser {
     }
 
     switch argument.completion.kind {
-    case .custom(let complete):
+    case .custom(_, let complete?):
       let (args, index, prefix) = try parseCustomCompletionArguments(from: args)
       return complete(args, index, prefix)
-    case .customAsync:
+    case .customAsync(_, let complete) where complete != nil:
       if #available(macOS 10.15, macCatalyst 13, iOS 13, tvOS 13, watchOS 6, *)
       {
         return nil

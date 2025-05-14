@@ -175,10 +175,16 @@ public struct ArgumentInfoV0: Codable, Hashable {
     case directory
     /// Call the given shell command to generate completions.
     case shellCommand(command: String)
-    /// Generate completions using the given three-parameter closure.
-    case custom
-    /// Generate completions using the given async three-parameter closure.
-    case customAsync
+    /// Generate completions using the given shell script and/or synchronous three-parameter closure.
+    case custom(
+      shellScript: String,
+      shouldRequestCompletionCandidatesFromSwift: Bool
+    )
+    /// Generate completions using the given shell script and/or asynchronous three-parameter closure.
+    case customAsync(
+      shellScript: String,
+      shouldRequestCompletionCandidatesFromSwift: Bool
+    )
     /// Generate completions using the given one-parameter closure.
     @available(*, deprecated, message: "Use custom instead.")
     case customDeprecated

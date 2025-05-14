@@ -453,7 +453,8 @@
               {
                 "completionKind" : {
                   "custom" : {
-
+                    "shellScript" : "",
+                    "shouldRequestCompletionCandidatesFromSwift" : true
                   }
                 },
                 "isOptional" : true,
@@ -632,7 +633,8 @@
               {
                 "completionKind" : {
                   "custom" : {
-
+                    "shellScript" : "",
+                    "shouldRequestCompletionCandidatesFromSwift" : true
                   }
                 },
                 "isOptional" : true,
