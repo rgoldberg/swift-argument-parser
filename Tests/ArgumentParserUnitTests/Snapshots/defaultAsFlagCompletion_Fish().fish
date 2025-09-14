@@ -58,13 +58,6 @@ function __defaultasflag-test_parse_subcommand -S -a positional_count
     end
 end
 
-function __defaultasflag-test_complete_directories
-    set -l token (commandline -t)
-    string match -- '*/' $token
-    set -l subdirs $token*/
-    printf %s\n $subdirs
-end
-
 function __defaultasflag-test_custom_completion
     set -x SAP_SHELL fish
     set -x SAP_SHELL_VERSION $FISH_VERSION
@@ -77,7 +70,7 @@ function __defaultasflag-test_custom_completion
 end
 
 complete -c 'defaultasflag-test' -f
-complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_flags_or_options "defaultasflag-test" bin-path' -l 'bin-path' -rfa '(__defaultasflag-test_complete_directories)'
+complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_flags_or_options "defaultasflag-test" bin-path' -l 'bin-path' -rfa '(__fish_complete_directories (commandline -tc) \'\')'
 complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_flags_or_options "defaultasflag-test" count' -l 'count' -rfka ''
 complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_flags_or_options "defaultasflag-test" verbose' -l 'verbose' -rfka ''
 complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_flags_or_options "defaultasflag-test" log-level' -l 'log-level' -rfka 'DEBUG INFO WARN ERROR'

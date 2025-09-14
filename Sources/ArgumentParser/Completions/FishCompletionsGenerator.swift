@@ -75,13 +75,6 @@ extension CommandInfoV0 {
         end
     end
 
-    function \(completeDirectoriesFunctionName)
-        set -l token (commandline -t)
-        string match -- '*/' $token
-        set -l subdirs $token*/
-        printf %s\\n $subdirs
-    end
-
     function \(customCompletionFunctionName)
         set -x \(Platform.Environment.Key.shellName.rawValue) fish
         set -x \(Platform.Environment.Key.shellVersion.rawValue) $FISH_VERSION
@@ -220,7 +213,7 @@ extension CommandInfoV0 {
           """
         }
       case .directory:
-        "-\(r)fa '(\(completeDirectoriesFunctionName))'"
+        "-\(r)fa '(__fish_complete_directories (commandline -tc) \\'\\')'"
       case .shellCommand(let shellCommand):
         "-\(r)fka '(\(shellCommand.fishEscapeForSingleQuotedString()))'"
       case .custom, .customAsync:
@@ -262,10 +255,6 @@ extension CommandInfoV0 {
 
   private var parseSubcommandFunctionName: String {
     "\(completionFunctionPrefix)_parse_subcommand"
-  }
-
-  private var completeDirectoriesFunctionName: String {
-    "\(completionFunctionPrefix)_complete_directories"
   }
 
   private var customCompletionFunctionName: String {

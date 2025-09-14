@@ -62,13 +62,6 @@ function __base-test_parse_subcommand -S -a positional_count
     end
 end
 
-function __base-test_complete_directories
-    set -l token (commandline -t)
-    string match -- '*/' $token
-    set -l subdirs $token*/
-    printf %s\n $subdirs
-end
-
 function __base-test_custom_completion
     set -x SAP_SHELL fish
     set -x SAP_SHELL_VERSION $FISH_VERSION
