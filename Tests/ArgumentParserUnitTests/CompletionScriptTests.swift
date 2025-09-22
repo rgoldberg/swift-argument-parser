@@ -52,8 +52,7 @@ extension SerializedTests.CompletionScriptTests {
   enum Kind:
     String,
     ExpressibleByArgument,
-    EnumerableFlag,
-    CustomStringConvertible
+    EnumerableFlag
   {
     case one, two
     case three = "custom-three"
