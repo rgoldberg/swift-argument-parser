@@ -442,7 +442,6 @@ extension Flag where Value: EnumerableFlag {
           let caseKey = InputKey(name: String(describing: value), parent: key)
           let name = Value.name(for: value)
 
-          let helpForCase = caseHelps[i] ?? help
           var defaultValueString: String? = nil
           if hasCustomCaseHelp {
             if value == initial {
@@ -455,7 +454,7 @@ extension Flag where Value: EnumerableFlag {
           let help = ArgumentDefinition.Help(
             allValueStrings: [],
             options: initial != nil ? .isOptional : [],
-            help: helpForCase,
+            help: caseHelps[i] ?? help,
             defaultValue: defaultValueString,
             key: key,
             isComposite: !hasCustomCaseHelp)
@@ -556,12 +555,11 @@ extension Flag {
           let caseKey = InputKey(
             name: String(describing: value), parent: parentKey)
           let name = Element.name(for: value)
-          let helpForCase = hasCustomCaseHelp ? (caseHelps[i] ?? help) : help
 
           let help = ArgumentDefinition.Help(
             allValueStrings: [],
             options: [.isOptional],
-            help: helpForCase,
+            help: hasCustomCaseHelp ? (caseHelps[i] ?? help) : help,
             defaultValue: nil,
             key: parentKey,
             isComposite: !hasCustomCaseHelp)
@@ -596,11 +594,10 @@ extension Flag {
           let caseKey = InputKey(
             name: String(describing: value), parent: parentKey)
           let name = Element.name(for: value)
-          let helpForCase = hasCustomCaseHelp ? (caseHelps[i] ?? help) : help
           let help = ArgumentDefinition.Help(
             allValueStrings: [],
             options: [.isOptional],
-            help: helpForCase,
+            help: hasCustomCaseHelp ? (caseHelps[i] ?? help) : help,
             defaultValue: nil,
             key: parentKey,
             isComposite: !hasCustomCaseHelp)
