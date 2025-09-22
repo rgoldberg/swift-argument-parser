@@ -649,15 +649,40 @@ extension ArgumentDefinition {
   static func flag<V>(
     name: NameSpecification, key: InputKey, caseKey: InputKey, help: Help,
     parsingStrategy: ArgumentDefinition.ParsingStrategy, initialValue: V?,
-    update: Update
+    update: Update, completion: CompletionKind = .default
   ) -> ArgumentDefinition {
     ArgumentDefinition(
       kind: .name(key: caseKey, specification: name), help: help,
-      completion: .default, parsingStrategy: parsingStrategy, update: update,
+      completion: completion, parsingStrategy: parsingStrategy, update: update,
       initial: { origin, values in
         if let initial = initialValue {
           values.set(initial, forKey: key, inputOrigin: origin)
         }
       })
+  }
+
+  static func flag<V>(
+    name: NameSpecification,
+    key: InputKey,
+    caseKey: InputKey,
+    help: Help,
+    parsingStrategy: ArgumentDefinition.ParsingStrategy,
+    initialValue: V?,
+    update: Update
+  ) -> ArgumentDefinition
+  where
+    V: EnumerableFlag & ExpressibleByArgument & RawRepresentable,
+    V.RawValue: ExpressibleByArgument
+  {
+    flag(
+      name: name,
+      key: key,
+      caseKey: caseKey,
+      help: help,
+      parsingStrategy: parsingStrategy,
+      initialValue: initialValue,
+      update: update,
+      completion: .list(V.RawValue.allValueStrings)
+    )
   }
 }
