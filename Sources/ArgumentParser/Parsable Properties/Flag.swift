@@ -559,7 +559,7 @@ extension Flag {
           let help = ArgumentDefinition.Help(
             allValueStrings: [],
             options: [.isOptional],
-            help: hasCustomCaseHelp ? (caseHelps[i] ?? help) : help,
+            help: caseHelps[i] ?? help,
             defaultValue: nil,
             key: parentKey,
             isComposite: !hasCustomCaseHelp)
@@ -597,7 +597,7 @@ extension Flag {
           let help = ArgumentDefinition.Help(
             allValueStrings: [],
             options: [.isOptional],
-            help: hasCustomCaseHelp ? (caseHelps[i] ?? help) : help,
+            help: caseHelps[i] ?? help,
             defaultValue: nil,
             key: parentKey,
             isComposite: !hasCustomCaseHelp)
