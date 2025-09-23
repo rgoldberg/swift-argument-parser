@@ -423,6 +423,23 @@ extension Flag where Value: EnumerableFlag {
     help: ArgumentHelp?
   ) {
     self.init(
+      initial: initial,
+      exclusivity: exclusivity,
+      help: help,
+      completion: .default
+    )
+  }
+
+  /// Creates a property with an optional default value, intended to be called by other constructors to centralize logic.
+  ///
+  /// This private `init` allows us to expose multiple other similar constructors to allow for standard default property initialization while reducing code duplication.
+  private init(
+    initial: Value?,
+    exclusivity: FlagExclusivity,
+    help: ArgumentHelp?,
+    completion: CompletionKind
+  ) {
+    self.init(
       _parsedValue: .init { key in
         // Create a string representation of the default value. Since this is a
         // flag, the default value to show to the user is the `--value-name`
@@ -461,11 +478,90 @@ extension Flag where Value: EnumerableFlag {
               try ArgumentSet.updateFlag(
                 key: key, value: value, origin: origin, values: &values,
                 exclusivity: exclusivity)
-            })
+            }),
+            completion: completion
           )
         }
         return ArgumentSet(args)
       })
+  }
+
+  /// Creates a property with a default value provided by standard Swift default value syntax that gets its value from the presence of a flag.
+  ///
+  /// Use this initializer to customize the name and number of states further than using a `Bool`.
+  /// To use, define an `EnumerableFlag` enumeration with a case for each state, and use that as the type for your flag.
+  /// In this case, the user can specify either `--use-production-server` or `--use-development-server` to set the flag's value.
+  ///
+  /// ```swift
+  /// enum ServerChoice: EnumerableFlag {
+  ///   case useProductionServer
+  ///   case useDevelopmentServer
+  /// }
+  ///
+  /// @Flag var serverChoice: ServerChoice = .useProductionServer
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - wrappedValue: A default value to use for this property, provided implicitly by the compiler during property wrapper initialization.
+  ///   - exclusivity: The behavior to use when multiple flags are specified.
+  ///   - help: Information about how to use this flag.
+  public init(
+    wrappedValue: Value,
+    exclusivity: FlagExclusivity = .exclusive,
+    help: ArgumentHelp? = nil
+  ) {
+    self.init(
+      initial: wrappedValue,
+      exclusivity: exclusivity,
+      help: help
+    )
+  }
+
+  /// Creates a property with no default value that gets its value from the presence of a flag.
+  ///
+  /// Use this initializer to customize the name and number of states further than using a `Bool`.
+  /// To use, define an `EnumerableFlag` enumeration with a case for each state, and use that as the type for your flag.
+  /// In this case, the user can specify either `--use-production-server` or `--use-development-server` to set the flag's value.
+  ///
+  /// ```swift
+  /// enum ServerChoice: EnumerableFlag {
+  ///   case useProductionServer
+  ///   case useDevelopmentServer
+  /// }
+  ///
+  /// @Flag var serverChoice: ServerChoice
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - exclusivity: The behavior to use when multiple flags are specified.
+  ///   - help: Information about how to use this flag.
+  public init(
+    exclusivity: FlagExclusivity = .exclusive,
+    help: ArgumentHelp? = nil
+  ) {
+    self.init(
+      initial: nil,
+      exclusivity: exclusivity,
+      help: help
+    )
+  }
+}
+
+extension Flag where Value: EnumerableFlag & ExpressibleByArgument {
+  /// Creates a property with an optional default value, intended to be called by other constructors to centralize logic.
+  ///
+  /// This private `init` allows us to expose multiple other similar constructors to allow for standard default property initialization while reducing code duplication.
+  private init(
+    initial: Value?,
+    exclusivity: FlagExclusivity,
+    help: ArgumentHelp?
+  ) {
+    self.init(
+      initial: initial,
+      exclusivity: exclusivity,
+      help: help,
+      completion: Value.defaultCompletionKind
+    )
   }
 
   /// Creates a property with a default value provided by standard Swift default value syntax that gets its value from the presence of a flag.
