@@ -1114,10 +1114,8 @@ extension HelpGenerationTests {
         USAGE: custom-option-as-list-with-single-default-value [--opt <opt> ...]
 
         OPTIONS:
-          --opt <opt>             An option with enumerable values. (default: red)
-                blue              - The color of the sky.
-                red               - The color of a rose.
-                yellow            - The color of the sun.
+          --opt <opt>             An option with enumerable values. (values: blue, red, yellow; default:
+                                  red)
           -h, --help              Show help information.
 
         """)
@@ -1138,10 +1136,8 @@ extension HelpGenerationTests {
         USAGE: custom-option-as-list-with-multiple-default-value [--opt <opt> ...]
 
         OPTIONS:
-          --opt <opt>             An option with multiple enumerable values. (default: red, blue)
-                blue              - The color of the sky.
-                red               - The color of a rose.
-                yellow            - The color of the sun.
+          --opt <opt>             An option with multiple enumerable values. (values: blue, red, yellow;
+                                  default: red, blue)
           -h, --help              Show help information.
 
         """)
@@ -1163,10 +1159,8 @@ extension HelpGenerationTests {
         USAGE: custom-option-as-list-with-empty-array-as-default [--opt <opt> ...]
 
         OPTIONS:
-          --opt <opt>             An option with default value set to empty array.
-                blue              - The color of the sky.
-                red               - The color of a rose.
-                yellow            - The color of the sun.
+          --opt <opt>             An option with default value set to empty array. (values: blue, red,
+                                  yellow)
           -h, --help              Show help information.
 
         """)

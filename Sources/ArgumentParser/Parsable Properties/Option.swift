@@ -398,6 +398,120 @@ extension Option where Value: ExpressibleByArgument {
   }
 }
 
+// MARK: - @Option T: ExpressibleByArgument Initializers
+extension Option where Value: ExpressibleByArgument & CaseIterable {
+  /// Creates a property with a default value that reads its value from a
+  /// labeled option.
+  ///
+  /// This initializer is used when you declare an `@Option`-attributed property
+  /// that has an `ExpressibleByArgument` type, providing a default value:
+  ///
+  /// ```swift
+  /// @Option var title: String = "<Title>"
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - wrappedValue: A default value to use for this property, provided
+  ///     implicitly by the compiler during property wrapper initialization.
+  ///   - name: A specification for what names are allowed for this option.
+  ///   - parsingStrategy: The behavior to use when looking for this option's
+  ///     value.
+  ///   - help: Information about how to use this option.
+  ///   - completion: The type of command-line completion provided for this
+  ///     option.
+  public init(
+    wrappedValue: Value,
+    name: NameSpecification = .long,
+    parsing parsingStrategy: SingleValueParsingStrategy = .next,
+    help: ArgumentHelp? = nil,
+    completion: CompletionKind? = nil
+  ) {
+    self.init(
+      _parsedValue: .init { key in
+        let arg = ArgumentDefinition(
+          container: Bare<Value>.self,
+          key: key,
+          kind: .name(key: key, specification: name),
+          help: .init(
+            help?.abstract ?? "",
+            discussion: help?.discussion,
+            valueName: help?.valueName,
+            visibility: help?.visibility ?? .default,
+            argumentType: Value.self
+          ),
+          parsingStrategy: parsingStrategy.base,
+          initial: wrappedValue,
+          completion: completion)
+
+        return ArgumentSet(arg)
+      })
+  }
+
+  @available(
+    *, deprecated,
+    message: """
+      Swap the order of the 'help' and 'completion' arguments.
+      """
+  )
+  public init(
+    wrappedValue _wrappedValue: Value,
+    name: NameSpecification = .long,
+    parsing parsingStrategy: SingleValueParsingStrategy = .next,
+    completion: CompletionKind?,
+    help: ArgumentHelp?
+  ) {
+    self.init(
+      wrappedValue: _wrappedValue,
+      name: name,
+      parsing: parsingStrategy,
+      help: help,
+      completion: completion)
+  }
+
+  /// Creates a required property that reads its value from a labeled option.
+  ///
+  /// This initializer is used when you declare an `@Option`-attributed property
+  /// that has an `ExpressibleByArgument` type, but without a default value:
+  ///
+  /// ```swift
+  /// @Option var title: String
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - name: A specification for what names are allowed for this option.
+  ///   - parsingStrategy: The behavior to use when looking for this option's
+  ///     value.
+  ///   - help: Information about how to use this option.
+  ///   - completion: The type of command-line completion provided for this
+  ///     option.
+  public init(
+    name: NameSpecification = .long,
+    parsing parsingStrategy: SingleValueParsingStrategy = .next,
+    help: ArgumentHelp? = nil,
+    completion: CompletionKind? = nil
+  ) {
+    self.init(
+      _parsedValue: .init { key in
+        let arg = ArgumentDefinition(
+          container: Bare<Value>.self,
+          key: key,
+          kind: .name(key: key, specification: name),
+          help: .init(
+            help?.abstract ?? "",
+            discussion: help?.discussion,
+            valueName: help?.valueName,
+            visibility: help?.visibility ?? .default,
+            argumentType: Value.self
+          ),
+          parsingStrategy: parsingStrategy.base,
+          initial: nil,
+          completion: completion)
+
+        return ArgumentSet(arg)
+      })
+  }
+}
+
 // MARK: - @Option T Initializers
 extension Option {
   /// Creates a property with a default value that reads its value from a
@@ -741,6 +855,134 @@ extension Option {
               nil, forKey: key, inputOrigin: InputOrigin(element: .defaultValue)
             )
           })
+
+        return ArgumentSet(arg)
+      })
+  }
+}
+
+// MARK: - @Option Optional<T: ExpressibleByArgument> Initializers
+extension Option {
+  /// Creates an optional property that reads its value from a labeled option,
+  /// with an explicit `nil` default.
+  ///
+  /// This initializer allows a user to provide a `nil` default value for an
+  /// optional `@Option`-marked property:
+  ///
+  /// ```swift
+  /// @Option var count: Int? = nil
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - wrappedValue: A default value to use for this property, provided
+  ///     implicitly by the compiler during property wrapper initialization.
+  ///   - name: A specification for what names are allowed for this option.
+  ///   - parsingStrategy: The behavior to use when looking for this option's
+  ///     value.
+  ///   - help: Information about how to use this option.
+  ///   - completion: The type of command-line completion provided for this
+  ///     option.
+  public init<T>(
+    wrappedValue: _OptionalNilComparisonType,
+    name: NameSpecification = .long,
+    parsing parsingStrategy: SingleValueParsingStrategy = .next,
+    help: ArgumentHelp? = nil,
+    completion: CompletionKind? = nil
+  ) where T: ExpressibleByArgument, T: CaseIterable, Value == T? {
+    self.init(
+      _parsedValue: .init { key in
+        let arg = ArgumentDefinition(
+          container: Optional<T>.self,
+          key: key,
+          kind: .name(key: key, specification: name),
+          help: .init(
+            help?.abstract ?? "",
+            discussion: help?.discussion,
+            valueName: help?.valueName,
+            visibility: help?.visibility ?? .default,
+            argumentType: T.self
+          ),
+          parsingStrategy: parsingStrategy.base,
+          initial: nil,
+          completion: completion)
+
+        return ArgumentSet(arg)
+      })
+  }
+
+  @available(
+    *, deprecated,
+    message: """
+      Optional @Options with default values should be declared as non-Optional.
+      """
+  )
+  @_disfavoredOverload
+  public init<T>(
+    wrappedValue _wrappedValue: T?,
+    name: NameSpecification = .long,
+    parsing parsingStrategy: SingleValueParsingStrategy = .next,
+    help: ArgumentHelp? = nil,
+    completion: CompletionKind? = nil
+  ) where T: ExpressibleByArgument, T: CaseIterable, Value == T? {
+    self.init(
+      _parsedValue: .init { key in
+        let arg = ArgumentDefinition(
+          container: Optional<T>.self,
+          key: key,
+          kind: .name(key: key, specification: name),
+          help: .init(
+            help?.abstract ?? "",
+            discussion: help?.discussion,
+            valueName: help?.valueName,
+            visibility: help?.visibility ?? .default,
+            argumentType: T.self
+          ),
+          parsingStrategy: parsingStrategy.base,
+          initial: _wrappedValue,
+          completion: completion)
+
+        return ArgumentSet(arg)
+      })
+  }
+
+  /// Creates an optional property that reads its value from a labeled option.
+  ///
+  /// This initializer is used when you declare an `@Option`-attributed property
+  /// with an optional type and no default value:
+  ///
+  /// ```swift
+  /// @Option var count: Int?
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - name: A specification for what names are allowed for this option.
+  ///   - parsingStrategy: The behavior to use when looking for this option's
+  ///     value.
+  ///   - help: Information about how to use this option.
+  ///   - completion: The type of command-line completion provided for this
+  ///     option.
+  public init<T>(
+    name: NameSpecification = .long,
+    parsing parsingStrategy: SingleValueParsingStrategy = .next,
+    help: ArgumentHelp? = nil,
+    completion: CompletionKind? = nil
+  ) where T: ExpressibleByArgument, T: CaseIterable, Value == T? {
+    self.init(
+      _parsedValue: .init { key in
+        let arg = ArgumentDefinition(
+          container: Optional<T>.self,
+          key: key,
+          kind: .name(key: key, specification: name),
+          help: .init(
+            help?.abstract ?? "",
+            discussion: help?.discussion,
+            valueName: help?.valueName,
+            visibility: help?.visibility ?? .default,
+            argumentType: T.self
+          ),
+          parsingStrategy: parsingStrategy.base,
+          initial: nil,
+          completion: completion)
 
         return ArgumentSet(arg)
       })
@@ -1113,6 +1355,92 @@ extension Option {
             visibility: help?.visibility ?? .default,
             argumentType: T.self
           ),
+          parsingStrategy: parsingStrategy.base,
+          initial: nil,
+          completion: completion)
+
+        return ArgumentSet(arg)
+      })
+  }
+}
+
+// MARK: - @Option Array<T: ExpressibleByArgument> Initializers
+extension Option {
+  /// Creates an array property that reads its values from zero or
+  /// more labeled options.
+  ///
+  /// This initializer is used when you declare an `@Option`-attributed array
+  /// property with a default value:
+  ///
+  /// ```swift
+  /// @Option(name: .customLong("char"))
+  /// var chars: [Character] = []
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - wrappedValue: A default value to use for this property, provided
+  ///     implicitly by the compiler during property wrapper initialization.
+  ///     If this initial value is non-empty, elements passed from the command
+  ///     line are appended to the original contents.
+  ///   - name: A specification for what names are allowed for this option.
+  ///   - parsingStrategy: The behavior to use when parsing the elements for
+  ///     this option.
+  ///   - help: Information about how to use this option.
+  ///   - completion: The type of command-line completion provided for this
+  ///     option.
+  public init<T>(
+    wrappedValue: [T],
+    name: NameSpecification = .long,
+    parsing parsingStrategy: ArrayParsingStrategy = .singleValue,
+    help: ArgumentHelp? = nil,
+    completion: CompletionKind? = nil
+  ) where T: ExpressibleByArgument, T: CaseIterable, Value == [T] {
+    self.init(
+      _parsedValue: .init { key in
+        let arg = ArgumentDefinition(
+          container: Array<T>.self,
+          key: key,
+          kind: .name(key: key, specification: name),
+          help: help,
+          parsingStrategy: parsingStrategy.base,
+          initial: wrappedValue,
+          completion: completion)
+
+        return ArgumentSet(arg)
+      })
+  }
+
+  /// Creates a required array property that reads its values from zero or
+  /// more labeled options.
+  ///
+  /// This initializer is used when you declare an `@Option`-attributed array
+  /// property without a default value:
+  ///
+  /// ```swift
+  /// @Option(name: .customLong("char"))
+  /// var chars: [Character]
+  /// ```
+  ///
+  /// - Parameters:
+  ///   - name: A specification for what names are allowed for this option.
+  ///   - parsingStrategy: The behavior to use when parsing the elements for
+  ///     this option.
+  ///   - help: Information about how to use this option.
+  ///   - completion: The type of command-line completion provided for this
+  ///     option.
+  public init<T>(
+    name: NameSpecification = .long,
+    parsing parsingStrategy: ArrayParsingStrategy = .singleValue,
+    help: ArgumentHelp? = nil,
+    completion: CompletionKind? = nil
+  ) where T: ExpressibleByArgument, T: CaseIterable, Value == [T] {
+    self.init(
+      _parsedValue: .init { key in
+        let arg = ArgumentDefinition(
+          container: Array<T>.self,
+          key: key,
+          kind: .name(key: key, specification: name),
+          help: help,
           parsingStrategy: parsingStrategy.base,
           initial: nil,
           completion: completion)

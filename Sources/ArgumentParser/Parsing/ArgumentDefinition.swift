@@ -288,6 +288,38 @@ extension ArgumentDefinition {
     kind: ArgumentDefinition.Kind,
     help: ArgumentHelp?,
     parsingStrategy: ParsingStrategy,
+    initial: Container.Initial?,
+    completion: CompletionKind?
+  )
+  where
+    Container: ArgumentDefinitionContainerExpressibleByArgument,
+    Container.Contained: CaseIterable
+  {
+    self.init(
+      container: Container.self,
+      key: key,
+      kind: kind,
+      allValueStrings: Container.Contained.allValueStrings,
+      help: help,
+      defaultValueDescription: Container.defaultValueDescription(initial),
+      parsingStrategy: parsingStrategy,
+      parser: { (key, origin, name, valueString) -> Container.Contained in
+        guard let value = Container.Contained(argument: valueString) else {
+          throw ParserError.unableToParseValue(
+            origin, name, valueString, forKey: key, originalError: nil)
+        }
+        return value
+      },
+      initial: initial,
+      completion: completion ?? Container.Contained.defaultCompletionKind)
+  }
+
+  init<Container>(
+    container: Container.Type,
+    key: InputKey,
+    kind: ArgumentDefinition.Kind,
+    help: ArgumentHelp?,
+    parsingStrategy: ParsingStrategy,
     transform: @escaping (String) throws -> Container.Contained,
     initial: Container.Initial?,
     completion: CompletionKind?
