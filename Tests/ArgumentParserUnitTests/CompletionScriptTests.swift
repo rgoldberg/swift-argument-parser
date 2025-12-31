@@ -77,7 +77,8 @@ extension SerializedTests.CompletionScriptTests {
     @Option(completion: .list(candidates(prefix: "c"))) var path3: Path
 
     @Flag(help: .hidden) var verbose = false
-    @Flag var allowedKinds: [Kind] = []
+    // TODO: Replace below with @Flag var allowedKinds: [Kind] = []
+    @Flag(help: "ROSSGOLDBERG") var allowedKind: Kind
     @Flag var kindCounter: Int
 
     @Option() var rep1: [String]

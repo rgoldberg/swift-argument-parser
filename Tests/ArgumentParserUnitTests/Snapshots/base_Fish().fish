@@ -87,9 +87,9 @@ complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_op
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" path1' -l 'path1' -rF
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" path2' -l 'path2' -rF
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" path3' -l 'path3' -rfka 'c1_fish c2_fish c3_fish'
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" one' -l 'one'
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" two' -l 'two'
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" three' -l 'three'
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" one' -l 'one' -d 'ROSSGOLDBERG' -rfka 'one two custom-three'
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" two' -l 'two' -d 'ROSSGOLDBERG' -rfka 'one two custom-three'
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test" three' -l 'three' -d 'ROSSGOLDBERG' -rfka 'one two custom-three'
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test"' -l 'kind-counter'
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test"' -l 'rep1' -rfka ''
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_flags_or_options "base-test"' -s 'r' -l 'rep2' -rfka ''
