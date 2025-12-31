@@ -437,8 +437,7 @@ extension Flag where Value: EnumerableFlag {
         let caseHelps = Value.allCases.map { Value.help(for: $0) }
         let hasCustomCaseHelp = caseHelps.contains(where: { $0 != nil })
 
-        let args = Value.allCases.enumerated().map {
-          (i, value) -> ArgumentDefinition in
+        let args = Value.allCases.enumerated().map { i, value in
           let caseKey = InputKey(name: String(describing: value), parent: key)
           let name = Value.name(for: value)
 
@@ -550,8 +549,7 @@ extension Flag {
         let caseHelps = Element.allCases.map { Element.help(for: $0) }
         let hasCustomCaseHelp = caseHelps.contains(where: { $0 != nil })
 
-        let args = Element.allCases.enumerated().map {
-          (i, value) -> ArgumentDefinition in
+        let args = Element.allCases.enumerated().map { i, value in
           let caseKey = InputKey(
             name: String(describing: value), parent: parentKey)
           let name = Element.name(for: value)
@@ -589,8 +587,7 @@ extension Flag {
         let caseHelps = Element.allCases.map { Element.help(for: $0) }
         let hasCustomCaseHelp = caseHelps.contains(where: { $0 != nil })
 
-        let args = Element.allCases.enumerated().map {
-          (i, value) -> ArgumentDefinition in
+        let args = Element.allCases.enumerated().map { i, value in
           let caseKey = InputKey(
             name: String(describing: value), parent: parentKey)
           let name = Element.name(for: value)
