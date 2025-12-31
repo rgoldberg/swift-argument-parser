@@ -426,7 +426,8 @@ extension Flag where Value: EnumerableFlag {
       initial: initial,
       exclusivity: exclusivity,
       help: help,
-      completion: .default
+      // TODO: Reinstate? completion: .default
+      completion: .list(["1", "2", "3"])
     )
   }
 
@@ -698,7 +699,8 @@ where
       initial: initial,
       exclusivity: exclusivity,
       help: help,
-      completion: Value.defaultCompletionKind
+      // TODO: Reinstate? completion: Value.defaultCompletionKind
+      completion: .list(Value.RawValue.allValueStrings)
     )
   }
 
@@ -795,7 +797,9 @@ extension Flag {
               try ArgumentSet.updateFlag(
                 key: parentKey, value: value, origin: origin, values: &values,
                 exclusivity: exclusivity)
-            }))
+            }),
+            completion: .file()
+          )
         }
         return ArgumentSet(args)
       })
@@ -834,7 +838,9 @@ extension Flag {
                 closure: {
                   $0.append(value)
                 })
-            }))
+            }),
+            completion: .directory
+          )
         }
         return ArgumentSet(args)
       })
