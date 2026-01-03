@@ -112,10 +112,10 @@ extension CommandInfoV0 {
               ? ""
               : """
 
-                  switch $unparsed_tokens[1]
-              \(subcommands.map(\.commandCases).joined(separator: "\n"))
-                  end
-              """
+                    switch $unparsed_tokens[1]
+                \(subcommands.map(\.commandCases).joined(separator: "\n"))
+                    end
+                """
           )
       """
       .indentingEachLine(by: 4)
@@ -142,16 +142,16 @@ extension CommandInfoV0 {
         return """
           \(prefix)\(
             arg.kind == .positional
-            ? """
-            \(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))" \({
-              positionalIndex += 1
-              return "\(positionalComparison) \(positionalIndex)"
-            }())
-            """
-            : """
-              \(shouldOfferCompletionsForFlagsOrOptionsFunctionName) "\(commandContext.joined(separator: separator))"\
-              \((arg.isRepeating ? [] : arg.names ?? []).map { " \($0.name)" }.sorted().joined())
-              """
+              ? """
+                \(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))" \({
+                  positionalIndex += 1
+                  return "\(positionalComparison) \(positionalIndex)"
+                }())
+                """
+              : """
+                \(shouldOfferCompletionsForFlagsOrOptionsFunctionName) "\(commandContext.joined(separator: separator))"\
+                \((arg.isRepeating ? [] : arg.names ?? []).map { " \($0.name)" }.sorted().joined())
+                """
           )' \(argumentSegments(arg).joined(separator: separator))
           """
       }

@@ -202,8 +202,7 @@ extension CommandInfoV0 {
       return ("", nil)
 
     case .file(let extensions):
-      return
-        extensions.isEmpty
+      return extensions.isEmpty
         ? ("_files", nil)
         : (
           "_files -g '\\''\(extensions.map { "*.\($0.shellEscapeForSingleQuotedString())" }.joined(separator: " "))'\\''",
