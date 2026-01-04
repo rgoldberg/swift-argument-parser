@@ -8,7 +8,7 @@ __math_complete() {
 
 __math_custom_complete() {
     local -a completions
-    completions=("${(@f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
+    completions=("${(f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
     if [[ "${#completions[@]}" -gt 1 ]]; then
         __math_complete "${completions[@]:0:-1}"
     fi

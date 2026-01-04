@@ -27,26 +27,16 @@ extension CommandInfoV0 {
     #compdef \(commandName)
 
     \(completeFunctionName)() {
-        local -r complete="${1}"
-        shift
         local -ar non_empty_completions=("${@:#(|:*)}")
         local -ar empty_completions=("${(M)@:#(|:*)}")
-        if [[ -n "${complete}" ]]; then
-            eval "${complete}"
-        else
-            _describe -V '' non_empty_completions -- empty_completions -P $'\\'\\''
-        fi
+        _describe -V '' non_empty_completions -- empty_completions -P $'\\'\\''
     }
 
     \(customCompleteFunctionName)() {
-        local -r complete="${1}"
-        shift
-        if ((${#})); then
-            local -a completions
-            completions=("${(@f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
-            \(completeFunctionName) "${complete}" "${completions[@]:0:-1}"
-        else
-            \(completeFunctionName) "${complete}"
+        local -a completions
+        completions=("${(f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
+        if [[ "${#completions[@]}" -gt 1 ]]; then
+            \(completeFunctionName) "${completions[@]:0:-1}"
         fi
     }
 
@@ -73,7 +63,7 @@ extension CommandInfoV0 {
     var repeatingPositionalIndicator = ""
     let argumentSpecsAndSetupScripts = (arguments ?? []).compactMap { arg in
       guard arg.shouldDisplay else {
-        return nil as (argumentSpec: String, setupScript: String?)?
+        return nil as (argumentSpec: String?, setupScript: String?)?
       }
 
       let line: String
@@ -110,7 +100,9 @@ extension CommandInfoV0 {
       case .option, .positional:
         let (argumentAction, setupScript) = argumentActionAndSetupScript(arg)
         return (
-          "'\(line):\(arg.valueName?.zshEscapeForSingleQuotedOptionSpec() ?? ""):\(argumentAction)'",
+          argumentAction.map {
+            "'\(line):\(arg.valueName?.zshEscapeForSingleQuotedOptionSpec() ?? ""):\($0)'"
+          },
           setupScript
         )
       case .flag:
@@ -182,7 +174,7 @@ extension CommandInfoV0 {
           local -i ret=1
       \(setupScripts.map { "\($0)\n" }.joined().indentingEachLine(by: 4))\
           local -ar arg_specs=(
-      \(argumentSpecs.joined(separator: "\n").indentingEachLine(by: 8))
+      \(argumentSpecs.compactMap(\.self).joined(separator: "\n").indentingEachLine(by: 8))
           )
           _arguments -w -s -S : "${arg_specs[@]}" && ret=0
       \(subcommandHandler)
@@ -196,7 +188,7 @@ extension CommandInfoV0 {
   /// Returns the zsh "action" for an argument completion string.
   private func argumentActionAndSetupScript(
     _ arg: ArgumentInfoV0
-  ) -> (argumentAction: String, setupScript: String?) {
+  ) -> (argumentAction: String?, setupScript: String?) {
     switch arg.completionKind {
     case .none:
       return ("", nil)
@@ -215,7 +207,7 @@ extension CommandInfoV0 {
     case .list(let list):
       let variableName = variableName(arg)
       return (
-        "{\(completeFunctionName) \"\" \"${\(variableName)[@]}\"}",
+        "{\(completeFunctionName) \"${\(variableName)[@]}\"}",
         "local -ar \(variableName)=(\(list.map { "'\($0.shellEscapeForSingleQuotedString())'" }.joined(separator: " ")))"
       )
 
@@ -233,24 +225,35 @@ extension CommandInfoV0 {
         let shellScript,
         let shouldRequestCompletionCandidatesFromSwift
       ):
-      let variableName = variableName(arg)
+      guard !shellScript.isEmpty else {
+        return (
+          "{\(customCompleteFunctionName) \(commonCustomCompletionCall(for: arg))}",
+          nil
+        )
+      }
+
       return (
+        nil,
         """
-        {\(customCompleteFunctionName) "${\(variableName)}"\(
+        \(
           shouldRequestCompletionCandidatesFromSwift
-            ? " \(arg.commonCustomCompletionCall(command: self)) \"${current_word_index}\" \"$(\(cursorIndexInCurrentWordFunctionName))\""
+            ? #"completions=("${(f)"$("${command_name}" \#(commonCustomCompletionCall(for: arg)) "${command_line[@]}")":0:-1}") "#
             : ""
-        )}
-        """,
-        "local -r \(variableName)='\(shellScript.shellEscapeForSingleQuotedString())'"
+        )\
+        eval '\(shellScript.shellEscapeForSingleQuotedString())'
+        """
       )
 
     case .customDeprecated:
       return (
-        "{\(customCompleteFunctionName) \"\" \(arg.commonCustomCompletionCall(command: self))}",
+        "{\(customCompleteFunctionName) \(arg.commonCustomCompletionCall(command: self))}",
         nil
       )
     }
+  }
+
+  private func commonCustomCompletionCall(for arg: ArgumentInfoV0) -> String {
+    "\(arg.commonCustomCompletionCall(command: self)) \"${current_word_index}\" \"$(\(cursorIndexInCurrentWordFunctionName))\""
   }
 
   private func variableName(_ arg: ArgumentInfoV0) -> String {

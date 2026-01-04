@@ -1,26 +1,16 @@
 #compdef math
 
 __math_complete() {
-    local -r complete="${1}"
-    shift
     local -ar non_empty_completions=("${@:#(|:*)}")
     local -ar empty_completions=("${(M)@:#(|:*)}")
-    if [[ -n "${complete}" ]]; then
-        eval "${complete}"
-    else
-        _describe -V '' non_empty_completions -- empty_completions -P $'\'\''
-    fi
+    _describe -V '' non_empty_completions -- empty_completions -P $'\'\''
 }
 
 __math_custom_complete() {
-    local -r complete="${1}"
-    shift
-    if ((${#})); then
-        local -a completions
-        completions=("${(@f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
-        __math_complete "${complete}" "${completions[@]:0:-1}"
-    else
-        __math_complete "${complete}"
+    local -a completions
+    completions=("${(f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
+    if [[ "${#completions[@]}" -gt 1 ]]; then
+        __math_complete "${completions[@]:0:-1}"
     fi
 }
 
@@ -139,7 +129,7 @@ _math_stats_average() {
     local -i ret=1
     local -ar ___kind=('mean' 'median' 'mode')
     local -ar arg_specs=(
-        '--kind[The kind of average to provide.]:kind:{__math_complete "" "${___kind[@]}"}'
+        '--kind[The kind of average to provide.]:kind:{__math_complete "${___kind[@]}"}'
         '*:values:'
         '--version[Show the version.]'
         '(-h --help)'{-h,--help}'[Show help information.]'
@@ -164,18 +154,16 @@ _math_stats_stdev() {
 _math_stats_quantiles() {
     local -i ret=1
     local -ar _one_of_four=('alphabet' 'alligator' 'branch' 'braggart')
-    local -r _custom_arg=''
-    local -r ___custom=''
     local -ar arg_specs=(
-        ':one-of-four:{__math_complete "" "${_one_of_four[@]}"}'
-        ':custom-arg:{__math_custom_complete "${_custom_arg}" ---completion stats quantiles -- positional@1 "${current_word_index}" "$(__math_cursor_index_in_current_word)"}'
-        ':custom-deprecated-arg:{__math_custom_complete "" ---completion stats quantiles -- positional@2}'
+        ':one-of-four:{__math_complete "${_one_of_four[@]}"}'
+        ':custom-arg:{__math_custom_complete ---completion stats quantiles -- positional@1 "${current_word_index}" "$(__math_cursor_index_in_current_word)"}'
+        ':custom-deprecated-arg:{__math_custom_complete ---completion stats quantiles -- positional@2}'
         '*:values:'
         '--file:file:_files -g '\''*.txt *.md'\'''
         '--directory:directory:_files -/'
         '--shell:shell:{local -a list;list=(${(f)"$(head -100 '\''/usr/share/dict/words'\'' | tail -50)"});_describe -V "" list}'
-        '--custom:custom:{__math_custom_complete "${___custom}" ---completion stats quantiles -- --custom "${current_word_index}" "$(__math_cursor_index_in_current_word)"}'
-        '--custom-deprecated:custom-deprecated:{__math_custom_complete "" ---completion stats quantiles -- --custom-deprecated}'
+        '--custom:custom:{__math_custom_complete ---completion stats quantiles -- --custom "${current_word_index}" "$(__math_cursor_index_in_current_word)"}'
+        '--custom-deprecated:custom-deprecated:{__math_custom_complete ---completion stats quantiles -- --custom-deprecated}'
         '--version[Show the version.]'
         '(-h --help)'{-h,--help}'[Show help information.]'
     )

@@ -1,26 +1,16 @@
 #compdef base-test
 
 __base-test_complete() {
-    local -r complete="${1}"
-    shift
     local -ar non_empty_completions=("${@:#(|:*)}")
     local -ar empty_completions=("${(M)@:#(|:*)}")
-    if [[ -n "${complete}" ]]; then
-        eval "${complete}"
-    else
-        _describe -V '' non_empty_completions -- empty_completions -P $'\'\''
-    fi
+    _describe -V '' non_empty_completions -- empty_completions -P $'\'\''
 }
 
 __base-test_custom_complete() {
-    local -r complete="${1}"
-    shift
-    if ((${#})); then
-        local -a completions
-        completions=("${(@f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
-        __base-test_complete "${complete}" "${completions[@]:0:-1}"
-    else
-        __base-test_complete "${complete}"
+    local -a completions
+    completions=("${(f)"$("${command_name}" "${@}" "${command_line[@]}")"}")
+    if [[ "${#completions[@]}" -gt 1 ]]; then
+        __base-test_complete "${completions[@]:0:-1}"
     fi
 }
 
@@ -53,23 +43,21 @@ _base-test() {
     local -ar ___kind=('one' 'two' 'custom-three')
     local -ar ___other_kind=('b1_zsh' 'b2_zsh' 'b3_zsh')
     local -ar ___path3=('c1_zsh' 'c2_zsh' 'c3_zsh')
-    local -r _argument=''
-    local -r _nested_argument=''
     local -ar arg_specs=(
         '--name[The user'\''s name.]:name:'
-        '--kind:kind:{__base-test_complete "" "${___kind[@]}"}'
-        '--other-kind:other-kind:{__base-test_complete "" "${___other_kind[@]}"}'
+        '--kind:kind:{__base-test_complete "${___kind[@]}"}'
+        '--other-kind:other-kind:{__base-test_complete "${___other_kind[@]}"}'
         '--path1:path1:_files'
         '--path2:path2:_files'
-        '--path3:path3:{__base-test_complete "" "${___path3[@]}"}'
+        '--path3:path3:{__base-test_complete "${___path3[@]}"}'
         '--one'
         '--two'
         '--custom-three'
         '*--kind-counter'
         '*--rep1:rep1:'
         '*'{-r,--rep2}':rep2:'
-        ':argument:{__base-test_custom_complete "${_argument}" ---completion -- positional@0 "${current_word_index}" "$(__base-test_cursor_index_in_current_word)"}'
-        ':nested-argument:{__base-test_custom_complete "${_nested_argument}" ---completion -- positional@1 "${current_word_index}" "$(__base-test_cursor_index_in_current_word)"}'
+        ':argument:{__base-test_custom_complete ---completion -- positional@0 "${current_word_index}" "$(__base-test_cursor_index_in_current_word)"}'
+        ':nested-argument:{__base-test_custom_complete ---completion -- positional@1 "${current_word_index}" "$(__base-test_cursor_index_in_current_word)"}'
         '(-h --help)'{-h,--help}'[Show help information.]'
         '(-): :->command'
         '(-)*:: :->arg'
@@ -108,10 +96,9 @@ _base-test_sub-command() {
 
 _base-test_escaped-command() {
     local -i ret=1
-    local -r _two=''
     local -ar arg_specs=(
         '--o\:n\[e[Escaped chars\: '\''\[\]\\.]:path\[\:options\]:'
-        ':two:{__base-test_custom_complete "${_two}" ---completion escaped-command -- positional@0 "${current_word_index}" "$(__base-test_cursor_index_in_current_word)"}'
+        ':two:{__base-test_custom_complete ---completion escaped-command -- positional@0 "${current_word_index}" "$(__base-test_cursor_index_in_current_word)"}'
         '(-h --help)'{-h,--help}'[Show help information.]'
     )
     _arguments -w -s -S : "${arg_specs[@]}" && ret=0
