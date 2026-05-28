@@ -177,42 +177,32 @@ extension CommandInfoV0 {
   }
 
   private func argumentSegments(_ arg: ArgumentInfoV0) -> [String] {
-    var results: [String] = []
-    if let names = arg.names, !names.isEmpty {
-      results += names.map(\.asCompleteArgument)
-      if let abstract = arg.abstract, !abstract.isEmpty {
-        results += [
-          "-d '\(abstract.fishEscapeForSingleQuotedString())'"
-        ]
-      }
-    }
-    let r = arg.kind == .positional ? "" : "r"
     let completions =
       switch arg.completionKind {
       case .none:
         switch arg.kind {
         case .positional,
           .option:
-          "-\(r)fka ''"
+          "-fka ''"
         default:
           String?.none
         }
       case .list(let list):
-        "-\(r)fka '\(list.joined(separator: separator))'"
+        "-fka '\(list.joined(separator: separator))'"
       case .file(let extensions):
         switch extensions.count {
         case 0:
-          "-\(r)F"
+          "-F"
         case 1:
           """
-          -\(r)fa '(\
+          -fa '(\
           for p in (string match -e -- \\'*/\\' (commandline -t);or printf \\n)*.\\'\(extensions.map { $0.fishEscapeForSingleQuotedString(iterationCount: 2) }.joined())\\';printf %s\\n $p;end;\
           __fish_complete_directories (commandline -t) \\'\\'\
           )'
           """
         default:
           """
-          -\(r)fa '(\
+          -fa '(\
           set -l exts \(extensions.map { "\\'\($0.fishEscapeForSingleQuotedString(iterationCount: 2))\\'" }.joined(separator: separator));\
           for p in (string match -e -- \\'*/\\' (commandline -t);or printf \\n)*.{$exts};printf %s\\n $p;end;\
           __fish_complete_directories (commandline -t) \\'\\'\
@@ -220,21 +210,28 @@ extension CommandInfoV0 {
           """
         }
       case .directory:
-        "-\(r)fa '(\(completeDirectoriesFunctionName))'"
+        "-fa '(\(completeDirectoriesFunctionName))'"
       case .shellCommand(let shellCommand):
-        "-\(r)fka '(\(shellCommand.fishEscapeForSingleQuotedString()))'"
+        "-fka '(\(shellCommand.fishEscapeForSingleQuotedString()))'"
       case .custom, .customAsync:
         """
-        -\(r)fka '(\
+        -fka '(\
         \(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)) \
         (count (\(tokensFunctionName) -pc)) (\(tokensFunctionName) -tC)\
         )'
         """
       case .customDeprecated:
-        "-\(r)fka '(\(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)))'"
+        "-fka '(\(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)))'"
       }
-    completions.map { results.append($0) }
-    return results
+    return [
+      arg.abstract.flatMap { abstract in
+        abstract.isEmpty || arg.names?.isEmpty != false
+          ? nil
+          : "-d '\(abstract.fishEscapeForSingleQuotedString())'"
+      },
+      completions,
+    ]
+    .compactMap(\.self)
   }
 
   var positionalArgumentCountArguments: String {
@@ -288,19 +285,6 @@ extension ArgumentInfoV0 {
 
   private func optionSpecRequiresValue(_ optionSpec: String) -> String {
     kind == .option ? "\(optionSpec)=\(isRepeating ? "+" : "")" : optionSpec
-  }
-}
-
-extension ArgumentInfoV0.NameInfoV0 {
-  fileprivate var asCompleteArgument: String {
-    switch kind {
-    case .long:
-      return "-l '\(name.fishEscapeForSingleQuotedString())'"
-    case .short:
-      return "-s '\(name.fishEscapeForSingleQuotedString())'"
-    case .longWithSingleDash:
-      return "-o '\(name.fishEscapeForSingleQuotedString())'"
-    }
   }
 }
 
