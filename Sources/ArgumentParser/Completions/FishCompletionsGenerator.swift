@@ -20,22 +20,50 @@ extension ToolInfoV0 {
 extension CommandInfoV0 {
   fileprivate var fishCompletionScript: String {
     """
-    function \(shouldOfferCompletionsForFlagsOrOptionsFunctionName) -a expected_commands
-        set -l non_repeating_flags_or_options $argv[2..]
-        set -l non_repeating_flags_or_options_absent 0
-        set -l positional_index 0
-        set -l commands
-        \(parseTokensFunctionName)
-        test "$commands" = "$expected_commands"; and return $non_repeating_flags_or_options_absent
+    function \(completeRepeatingOptionFunctionName) -a expected_commands expected_options
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options'" $argv[3..-3] -fa "$expected_options"
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'" $argv[-2..]
     end
 
-    function \(shouldOfferCompletionsForPositionalFunctionName) -a expected_commands positional_index_comparison expected_positional_index
-        set -l non_repeating_flags_or_options
-        set -l non_repeating_flags_or_options_absent 0
+    function \(completeNonRepeatingOptionFunctionName) -a expected_commands expected_options
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options'" $argv[3..-3] -fa "$expected_options"
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'" $argv[-2..]
+    end
+
+    function \(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) -a expected_commands expected_options option_check
+        set -l flags (string split -n ' ' -- $expected_options)
+        if test -z "$option_check"
+            set option_check true
+            set non_repeating_flags _flag_(string replace -a - _ -- (string trim -lc - -- $flags))
+        else
+            set non_repeating_flags
+        end
+        set -l non_repeating_flags_absent 0
         set -l positional_index 0
+        set -l option
         set -l commands
         \(parseTokensFunctionName)
-        test "$commands" = "$expected_commands" -a \\( "$positional_index" "$positional_index_comparison" "$expected_positional_index" \\)
+        test "$status" -eq 0 -a "$commands" = "$expected_commands" -a "$non_repeating_flags_absent" -eq 0 && eval $option_check
+    end
+
+    function \(shouldOfferCompletionsForRepeatingPositionalFunctionName)
+        set -l is_repeating_positional 0
+        \(shouldOfferCompletionsForPositionalFunctionName) $argv
+    end
+
+    function \(shouldOfferCompletionsForNonRepeatingPositionalFunctionName)
+        \(shouldOfferCompletionsForPositionalFunctionName) $argv
+    end
+
+    function \(shouldOfferCompletionsForPositionalFunctionName) -Sa expected_commands positional_index_comparison expected_positional_index
+        set -l non_repeating_flags
+        set -l non_repeating_flags_absent 0
+        set -l positional_index 0
+        set -l expected_options
+        set -l option
+        set -l commands
+        \(parseTokensFunctionName)
+        test "$status" -eq 0 -a "$commands" = "$expected_commands" -a \\( "$positional_index" "$positional_index_comparison" "$expected_positional_index" \\)
     end
 
     function \(parseTokensFunctionName) -S
@@ -54,24 +82,33 @@ extension CommandInfoV0 {
     end
 
     function \(parseSubcommandFunctionName) -S -a positional_count
-        argparse -s r -- $argv
         set -l option_specs $argv[2..]
-        set -l is_repeating_positional $_flag_r
-        set -el _flag_r
         set -a commands $unparsed_tokens[1]
         set positional_index 0
         while true
             set -e unparsed_tokens[1]
-            argparse -sn "$commands" $option_specs -- $unparsed_tokens 2> /dev/null
-            set unparsed_tokens $argv
-            set positional_index (math $positional_index + 1)
-            for non_repeating_flag_or_option in $non_repeating_flags_or_options
-                if set -ql "_flag_$(string replace -a - _ -- $non_repeating_flag_or_option)"
-                    set non_repeating_flags_or_options_absent 1
+            argparse -sn "$commands" $option_specs -- $unparsed_tokens 2>| read -l argparse_error
+            if test -z "$argparse_error"
+                set unparsed_tokens $argv
+                set positional_index (math $positional_index + 1)
+            else if string match -q '*: option requires an argument' -- $argparse_error
+                set option "$unparsed_tokens[-1]"
+                if not contains -- "$option" $flags
+                    return 1
+                end
+                set _flag_(string replace -a - _ -- (string trim -lc - -- $option)) $option
+                argparse -sn "$commands" $option_specs -- $unparsed_tokens[..-2] || return
+                set unparsed_tokens $argv
+            else
+                return 1
+            end
+            for non_repeating_flag in $non_repeating_flags
+                if set -q -- "$non_repeating_flag"
+                    set non_repeating_flags_absent 1
                     break
                 end
             end
-            test (count $unparsed_tokens) -eq 0 -o \\( -z "$is_repeating_positional" -a "$positional_index" -gt "$positional_count" \\) && break
+            test (count $unparsed_tokens) -eq 0 -o \\( -z "$is_repeating_positional" -a "$positional_index" -gt "$positional_count" \\) && return
         end
     end
 
@@ -107,7 +144,7 @@ extension CommandInfoV0 {
             .compactMap(\.optionSpec)
             .map { "'\($0.fishEscapeForSingleQuotedString())'" }
             .joined(separator: separator)
-          )\(
+          ) || return\(
             subcommands.isEmpty
               ? ""
               : """
@@ -140,19 +177,19 @@ extension CommandInfoV0 {
         }
 
         return """
-          \(prefix)\(
+          \(
             arg.kind == .positional
             ? """
-            \(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))" \({
+            \(prefix)\(arg.isRepeating ? shouldOfferCompletionsForRepeatingPositionalFunctionName : shouldOfferCompletionsForNonRepeatingPositionalFunctionName) "\(commandContext.joined(separator: separator))" \({
               positionalIndex += 1
               return "\(positionalComparison) \(positionalIndex)"
-            }())
+            }())'
             """
             : """
-              \(shouldOfferCompletionsForFlagsOrOptionsFunctionName) "\(commandContext.joined(separator: separator))"\
-              \((arg.isRepeating ? [] : arg.names ?? []).map { " \($0.name)" }.sorted().joined())
+              \(arg.isRepeating ? completeRepeatingOptionFunctionName : completeNonRepeatingOptionFunctionName)\
+               '\(commandContext.joined(separator: separator))' '\((arg.names ?? []).map { $0.commonCompletionSynopsisString() }.joined(separator: " "))'
               """
-          )' \(argumentSegments(arg).joined(separator: separator))
+          ) \(argumentSegments(arg).joined(separator: separator))
           """
       }
 
@@ -162,7 +199,7 @@ extension CommandInfoV0 {
       argumentCompletions
       + subcommands.map {
         """
-        \(prefix)\(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))"\
+        \(prefix)\(shouldOfferCompletionsForNonRepeatingPositionalFunctionName) "\(commandContext.joined(separator: separator))"\
          -eq \(positionalIndex)' -fa '\($0.commandName)' -d '\($0.abstract?.fishEscapeForSingleQuotedString() ?? "")'
         """
       }
@@ -241,8 +278,26 @@ extension CommandInfoV0 {
       """
   }
 
-  private var shouldOfferCompletionsForFlagsOrOptionsFunctionName: String {
-    "\(completionFunctionPrefix)_should_offer_completions_for_flags_or_options"
+  private var completeRepeatingOptionFunctionName: String {
+    "\(completionFunctionPrefix)_complete_repeating_option"
+  }
+
+  private var completeNonRepeatingOptionFunctionName: String {
+    "\(completionFunctionPrefix)_complete_non_repeating_option"
+  }
+
+  private var shouldOfferCompletionsForFlagsOrOptionValuesFunctionName: String {
+    "\(completionFunctionPrefix)_should_offer_completions_for_flags_or_option_values"
+  }
+
+  private var shouldOfferCompletionsForRepeatingPositionalFunctionName: String {
+    "\(completionFunctionPrefix)_should_offer_completions_for_repeating_positional"
+  }
+
+  private var shouldOfferCompletionsForNonRepeatingPositionalFunctionName:
+    String
+  {
+    "\(completionFunctionPrefix)_should_offer_completions_for_non_repeating_positional"
   }
 
   private var shouldOfferCompletionsForPositionalFunctionName: String {
