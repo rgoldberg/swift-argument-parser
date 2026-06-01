@@ -1,18 +1,9 @@
-function __math_complete_repeating_flag -a expected_commands expected_flags description
+function __math_complete_flag -a expected_commands expected_flags description
     complete -c 'math' -n "__math_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_flags'" (test -n "$description" && printf '-d %s' $description) -fa "$expected_flags"
 end
 
-function __math_complete_non_repeating_flag -a expected_commands expected_flags description
-    complete -c 'math' -n "__math_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_flags'" (test -n "$description" && printf '-d %s' $description) -fa "$expected_flags"
-end
-
-function __math_complete_repeating_option -a expected_commands expected_options
-    __math_complete_repeating_flag $argv
-    complete -c 'math' -n "__math_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'" $argv[4..-1]
-end
-
-function __math_complete_non_repeating_option -a expected_commands expected_options
-    __math_complete_non_repeating_flag $argv
+function __math_complete_option -a expected_commands expected_options
+    __math_complete_flag $argv
     complete -c 'math' -n "__math_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'" $argv[4..-1]
 end
 
@@ -86,11 +77,19 @@ function __math_parse_tokens -S
 end
 
 function __math_tokens
-    if test (string split -m 1 -f 1 -- . "$FISH_VERSION") -gt 3
-        commandline --tokens-raw $argv
+    set -l fish_version (string split -m 2 -f 1,2 -- . "$FISH_VERSION")
+    if test $fish_version[1] -gt 4; or test $fish_version[1] -eq 4 -a $fish_version[2] -ge 1
+        set -f tokenize --tokenize-raw
     else
-        commandline -o $argv
+        set -f tokenize -t
     end
+
+    eval "function __math_tokens
+        commandline \$argv | read $tokenize -la tokens
+        printf %s\n \$tokens
+    end"
+
+    __math_tokens $argv
 end
 
 function __math_parse_subcommand -Sa expected_positional_count expected_is_repeating
@@ -145,36 +144,36 @@ function __math_custom_completion
 end
 
 complete -c 'math' -f
-__math_complete_non_repeating_flag 'math' '--version' 'Show the version.'
-__math_complete_non_repeating_flag 'math' '-h --help' 'Show help information.'
+__math_complete_flag 'math' '--version' 'Show the version.'
+__math_complete_flag 'math' '-h --help' 'Show help information.'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math" 1' -fa 'add' -d 'Print the sum of the values.'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math" 1' -fa 'multiply' -d 'Print the product of the values.'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math" 1' -fa 'stats' -d 'Calculate descriptive statistics.'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math" 1' -fa 'help' -d 'Show subcommand help information.'
-__math_complete_non_repeating_flag 'math add' '--hex-output -x' 'Use hexadecimal notation for the result.'
-__math_complete_non_repeating_flag 'math add' '--version' 'Show the version.'
-__math_complete_non_repeating_flag 'math add' '-h --help' 'Show help information.'
-__math_complete_non_repeating_flag 'math multiply' '--hex-output -x' 'Use hexadecimal notation for the result.'
-__math_complete_non_repeating_flag 'math multiply' '--version' 'Show the version.'
-__math_complete_non_repeating_flag 'math multiply' '-h --help' 'Show help information.'
-__math_complete_non_repeating_flag 'math stats' '--version' 'Show the version.'
-__math_complete_non_repeating_flag 'math stats' '-h --help' 'Show help information.'
+__math_complete_flag 'math add' '--hex-output -x' 'Use hexadecimal notation for the result.'
+__math_complete_flag 'math add' '--version' 'Show the version.'
+__math_complete_flag 'math add' '-h --help' 'Show help information.'
+__math_complete_flag 'math multiply' '--hex-output -x' 'Use hexadecimal notation for the result.'
+__math_complete_flag 'math multiply' '--version' 'Show the version.'
+__math_complete_flag 'math multiply' '-h --help' 'Show help information.'
+__math_complete_flag 'math stats' '--version' 'Show the version.'
+__math_complete_flag 'math stats' '-h --help' 'Show help information.'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats" 1' -fa 'average' -d 'Print the average of the values.'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats" 1' -fa 'stdev' -d 'Print the standard deviation of the values.'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats" 1' -fa 'quantiles' -d 'Print the quantiles of the values (TBD).'
-__math_complete_non_repeating_option 'math stats average' '--kind' 'The kind of average to provide.' -fka 'mean median mode'
-__math_complete_non_repeating_flag 'math stats average' '--version' 'Show the version.'
-__math_complete_non_repeating_flag 'math stats average' '-h --help' 'Show help information.'
-__math_complete_non_repeating_flag 'math stats stdev' '--version' 'Show the version.'
-__math_complete_non_repeating_flag 'math stats stdev' '-h --help' 'Show help information.'
+__math_complete_option 'math stats average' '--kind' 'The kind of average to provide.' -fka 'mean median mode'
+__math_complete_flag 'math stats average' '--version' 'Show the version.'
+__math_complete_flag 'math stats average' '-h --help' 'Show help information.'
+__math_complete_flag 'math stats stdev' '--version' 'Show the version.'
+__math_complete_flag 'math stats stdev' '-h --help' 'Show help information.'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" 1' -fka 'alphabet alligator branch braggart'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" 2' -fka '(__math_custom_completion ---completion stats quantiles -- positional@1 (count (__math_tokens -pc)) (__math_tokens -tC))'
 complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" 3' -fka '(__math_custom_completion ---completion stats quantiles -- positional@2)'
-__math_complete_non_repeating_option 'math stats quantiles' '--file' '' -fa '(set -l exts \'txt\' \'md\';for p in (string match -e -- \'*/\' (commandline -t);or printf \n)*.{$exts};printf %s\n $p;end;__fish_complete_directories (commandline -t) \'\')'
-__math_complete_non_repeating_option 'math stats quantiles' '--directory' '' -fa '(__math_complete_directories)'
-__math_complete_non_repeating_option 'math stats quantiles' '--shell' '' -fka '(head -100 \'/usr/share/dict/words\' | tail -50)'
-__math_complete_non_repeating_option 'math stats quantiles' '--custom' '' -fka '(__math_custom_completion ---completion stats quantiles -- --custom (count (__math_tokens -pc)) (__math_tokens -tC))'
-__math_complete_non_repeating_option 'math stats quantiles' '--custom-deprecated' '' -fka '(__math_custom_completion ---completion stats quantiles -- --custom-deprecated)'
-__math_complete_non_repeating_flag 'math stats quantiles' '--version' 'Show the version.'
-__math_complete_non_repeating_flag 'math stats quantiles' '-h --help' 'Show help information.'
-__math_complete_non_repeating_flag 'math help' '--version' 'Show the version.'
+__math_complete_option 'math stats quantiles' '--file' '' -fa '(set -l exts \'txt\' \'md\';for p in (string match -e -- \'*/\' (commandline -t);or printf \n)*.{$exts};printf %s\n $p;end;__fish_complete_directories (commandline -t) \'\')'
+__math_complete_option 'math stats quantiles' '--directory' '' -fa '(__math_complete_directories)'
+__math_complete_option 'math stats quantiles' '--shell' '' -fka '(head -100 \'/usr/share/dict/words\' | tail -50)'
+__math_complete_option 'math stats quantiles' '--custom' '' -fka '(__math_custom_completion ---completion stats quantiles -- --custom (count (__math_tokens -pc)) (__math_tokens -tC))'
+__math_complete_option 'math stats quantiles' '--custom-deprecated' '' -fka '(__math_custom_completion ---completion stats quantiles -- --custom-deprecated)'
+__math_complete_flag 'math stats quantiles' '--version' 'Show the version.'
+__math_complete_flag 'math stats quantiles' '-h --help' 'Show help information.'
+__math_complete_flag 'math help' '--version' 'Show the version.'

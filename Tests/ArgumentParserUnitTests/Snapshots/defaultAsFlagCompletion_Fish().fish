@@ -1,18 +1,9 @@
-function __defaultasflag-test_complete_repeating_flag -a expected_commands expected_flags description
+function __defaultasflag-test_complete_flag -a expected_commands expected_flags description
     complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_flags'" (test -n "$description" && printf '-d %s' $description) -fa "$expected_flags"
 end
 
-function __defaultasflag-test_complete_non_repeating_flag -a expected_commands expected_flags description
-    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_flags'" (test -n "$description" && printf '-d %s' $description) -fa "$expected_flags"
-end
-
-function __defaultasflag-test_complete_repeating_option -a expected_commands expected_options
-    __defaultasflag-test_complete_repeating_flag $argv
-    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'" $argv[4..-1]
-end
-
-function __defaultasflag-test_complete_non_repeating_option -a expected_commands expected_options
-    __defaultasflag-test_complete_non_repeating_flag $argv
+function __defaultasflag-test_complete_option -a expected_commands expected_options
+    __defaultasflag-test_complete_flag $argv
     complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'" $argv[4..-1]
 end
 
@@ -70,11 +61,19 @@ function __defaultasflag-test_parse_tokens -S
 end
 
 function __defaultasflag-test_tokens
-    if test (string split -m 1 -f 1 -- . "$FISH_VERSION") -gt 3
-        commandline --tokens-raw $argv
+    set -l fish_version (string split -m 2 -f 1,2 -- . "$FISH_VERSION")
+    if test $fish_version[1] -gt 4; or test $fish_version[1] -eq 4 -a $fish_version[2] -ge 1
+        set -f tokenize --tokenize-raw
     else
-        commandline -o $argv
+        set -f tokenize -t
     end
+
+    eval "function __defaultasflag-test_tokens
+        commandline \$argv | read $tokenize -la tokens
+        printf %s\n \$tokens
+    end"
+
+    __defaultasflag-test_tokens $argv
 end
 
 function __defaultasflag-test_parse_subcommand -Sa expected_positional_count expected_is_repeating
@@ -129,11 +128,11 @@ function __defaultasflag-test_custom_completion
 end
 
 complete -c 'defaultasflag-test' -f
-__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--bin-path' '' -fa '(__defaultasflag-test_complete_directories)'
-__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--count' '' -fka ''
-__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--verbose' '' -fka ''
-__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--log-level' '' -fka 'DEBUG INFO WARN ERROR'
-__defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '--help' ''
+__defaultasflag-test_complete_option 'defaultasflag-test' '--bin-path' '' -fa '(__defaultasflag-test_complete_directories)'
+__defaultasflag-test_complete_option 'defaultasflag-test' '--count' '' -fka ''
+__defaultasflag-test_complete_option 'defaultasflag-test' '--verbose' '' -fka ''
+__defaultasflag-test_complete_option 'defaultasflag-test' '--log-level' '' -fka 'DEBUG INFO WARN ERROR'
+__defaultasflag-test_complete_flag 'defaultasflag-test' '--help' ''
 complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_positional "defaultasflag-test" 1' -F
-__defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '-h --help' 'Show help information.'
+__defaultasflag-test_complete_flag 'defaultasflag-test' '-h --help' 'Show help information.'
 complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_positional "defaultasflag-test" 2' -fa 'help' -d 'Show subcommand help information.'

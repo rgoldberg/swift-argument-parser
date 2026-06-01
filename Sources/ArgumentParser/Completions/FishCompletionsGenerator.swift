@@ -76,11 +76,19 @@ extension CommandInfoV0 {
     end
 
     function \(tokensFunctionName)
-        if test (string split -m 1 -f 1 -- . "$FISH_VERSION") -gt 3
-            commandline --tokens-raw $argv
+        set -l fish_version (string split -m 2 -f 1,2 -- . "$FISH_VERSION")
+        if test $fish_version[1] -gt 4; or test $fish_version[1] -eq 4 -a $fish_version[2] -ge 1
+            set -f tokenize --tokenize-raw
         else
-            commandline -o $argv
+            set -f tokenize -t
         end
+
+        eval "function \(tokensFunctionName)
+            commandline \\$argv | read $tokenize -la tokens
+            printf %s\\n \\$tokens
+        end"
+
+        \(tokensFunctionName) $argv
     end
 
     function \(parseSubcommandFunctionName) -Sa expected_positional_count expected_is_repeating
