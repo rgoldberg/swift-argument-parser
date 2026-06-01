@@ -1,11 +1,19 @@
+function __defaultasflag-test_complete_repeating_flag -a expected_commands expected_flags
+    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_flags'" $argv[3..-1] -fa "$expected_flags"
+end
+
+function __defaultasflag-test_complete_non_repeating_flag -a expected_commands expected_flags
+    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_flags'" $argv[3..-1] -fa "$expected_flags"
+end
+
 function __defaultasflag-test_complete_repeating_option -a expected_commands expected_options
-    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options'" $argv[3..-3] -fa "$expected_options"
-    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'" $argv[-2..]
+    __defaultasflag-test_complete_repeating_flag $argv
+    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'"
 end
 
 function __defaultasflag-test_complete_non_repeating_option -a expected_commands expected_options
-    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options'" $argv[3..-3] -fa "$expected_options"
-    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'" $argv[-2..]
+    __defaultasflag-test_complete_non_repeating_flag $argv
+    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'"
 end
 
 function __defaultasflag-test_should_offer_completions_for_flags_or_option_values -a expected_commands expected_options option_check
@@ -118,7 +126,7 @@ __defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--bin-p
 __defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--count' -fka ''
 __defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--verbose' -fka ''
 __defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--log-level' -fka 'DEBUG INFO WARN ERROR'
-__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--help' 
+__defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '--help' 
 complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_non_repeating_positional "defaultasflag-test" -eq 1' -F
-__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '-h --help' -d 'Show help information.'
+__defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '-h --help' -d 'Show help information.'
 complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_non_repeating_positional "defaultasflag-test" -eq 2' -fa 'help' -d 'Show subcommand help information.'

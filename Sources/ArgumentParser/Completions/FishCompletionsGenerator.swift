@@ -20,14 +20,22 @@ extension ToolInfoV0 {
 extension CommandInfoV0 {
   fileprivate var fishCompletionScript: String {
     """
-    function \(completeRepeatingOptionFunctionName) -a expected_commands expected_options
-        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options'" $argv[3..-3] -fa "$expected_options"
-        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'" $argv[-2..]
+    function \(completeFunctionName(repeating: true, kind: .flag)) -a expected_commands expected_flags
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_flags'" $argv[3..-1] -fa "$expected_flags"
     end
 
-    function \(completeNonRepeatingOptionFunctionName) -a expected_commands expected_options
-        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options'" $argv[3..-3] -fa "$expected_options"
-        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'" $argv[-2..]
+    function \(completeFunctionName(repeating: false, kind: .flag)) -a expected_commands expected_flags
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_flags'" $argv[3..-1] -fa "$expected_flags"
+    end
+
+    function \(completeFunctionName(repeating: true, kind: .option)) -a expected_commands expected_options
+        \(completeFunctionName(repeating: true, kind: .flag)) $argv
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'"
+    end
+
+    function \(completeFunctionName(repeating: false, kind: .option)) -a expected_commands expected_options
+        \(completeFunctionName(repeating: false, kind: .flag)) $argv
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'"
     end
 
     function \(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) -a expected_commands expected_options option_check
@@ -186,7 +194,7 @@ extension CommandInfoV0 {
             }())'
             """
             : """
-              \(arg.isRepeating ? completeRepeatingOptionFunctionName : completeNonRepeatingOptionFunctionName)\
+              \(completeFunctionName(repeating: arg.isRepeating, kind: arg.kind))\
                '\(commandContext.joined(separator: separator))' '\((arg.names ?? []).map { $0.commonCompletionSynopsisString() }.joined(separator: " "))'
               """
           ) \(argumentSegments(arg).joined(separator: separator))
@@ -278,12 +286,10 @@ extension CommandInfoV0 {
       """
   }
 
-  private var completeRepeatingOptionFunctionName: String {
-    "\(completionFunctionPrefix)_complete_repeating_option"
-  }
-
-  private var completeNonRepeatingOptionFunctionName: String {
-    "\(completionFunctionPrefix)_complete_non_repeating_option"
+  private func completeFunctionName(
+    repeating: Bool, kind: ArgumentInfoV0.KindV0
+  ) -> String {
+    "\(completionFunctionPrefix)_complete\(repeating ? "" : "_non")_repeating_\(kind)"
   }
 
   private var shouldOfferCompletionsForFlagsOrOptionValuesFunctionName: String {
