@@ -1,9 +1,9 @@
-function __base-test_complete_repeating_flag -a expected_commands expected_flags
-    complete -c 'base-test' -n "__base-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_flags'" $argv[3..-1] -fa "$expected_flags"
+function __base-test_complete_repeating_flag -a expected_commands expected_flags description
+    complete -c 'base-test' -n "__base-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_flags'" (test -n "$description" && printf '-d %s' $description) -fa "$expected_flags"
 end
 
-function __base-test_complete_non_repeating_flag -a expected_commands expected_flags
-    complete -c 'base-test' -n "__base-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_flags'" $argv[3..-1] -fa "$expected_flags"
+function __base-test_complete_non_repeating_flag -a expected_commands expected_flags description
+    complete -c 'base-test' -n "__base-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_flags'" (test -n "$description" && printf '-d %s' $description) -fa "$expected_flags"
 end
 
 function __base-test_complete_repeating_option -a expected_commands expected_options

@@ -20,12 +20,12 @@ extension ToolInfoV0 {
 extension CommandInfoV0 {
   fileprivate var fishCompletionScript: String {
     """
-    function \(completeFunctionName(repeating: true, kind: .flag)) -a expected_commands expected_flags
-        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_flags'" $argv[3..-1] -fa "$expected_flags"
+    function \(completeFunctionName(repeating: true, kind: .flag)) -a expected_commands expected_flags description
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_flags'" (test -n "$description" && printf '-d %s' $description) -fa "$expected_flags"
     end
 
-    function \(completeFunctionName(repeating: false, kind: .flag)) -a expected_commands expected_flags
-        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_flags'" $argv[3..-1] -fa "$expected_flags"
+    function \(completeFunctionName(repeating: false, kind: .flag)) -a expected_commands expected_flags description
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_flags'" (test -n "$description" && printf '-d %s' $description) -fa "$expected_flags"
     end
 
     function \(completeFunctionName(repeating: true, kind: .option)) -a expected_commands expected_options
