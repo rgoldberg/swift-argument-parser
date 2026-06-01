@@ -30,12 +30,12 @@ extension CommandInfoV0 {
 
     function \(completeFunctionName(repeating: true, kind: .option)) -a expected_commands expected_options
         \(completeFunctionName(repeating: true, kind: .flag)) $argv
-        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'"
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'" $argv[4..-1]
     end
 
     function \(completeFunctionName(repeating: false, kind: .option)) -a expected_commands expected_options
         \(completeFunctionName(repeating: false, kind: .flag)) $argv
-        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'"
+        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'" $argv[4..-1]
     end
 
     function \(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) -a expected_commands expected_options option_check
@@ -269,11 +269,9 @@ extension CommandInfoV0 {
         "-fka '(\(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)))'"
       }
     return [
-      arg.abstract.flatMap { abstract in
-        abstract.isEmpty || arg.names?.isEmpty != false
-          ? nil
-          : "-d '\(abstract.fishEscapeForSingleQuotedString())'"
-      },
+      arg.kind == .positional
+        ? nil
+        : "'\(arg.abstract?.fishEscapeForSingleQuotedString() ?? "")'",
       completions,
     ]
     .compactMap(\.self)

@@ -8,12 +8,12 @@ end
 
 function __defaultasflag-test_complete_repeating_option -a expected_commands expected_options
     __defaultasflag-test_complete_repeating_flag $argv
-    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'"
+    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'" $argv[4..-1]
 end
 
 function __defaultasflag-test_complete_non_repeating_option -a expected_commands expected_options
     __defaultasflag-test_complete_non_repeating_flag $argv
-    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'"
+    complete -c 'defaultasflag-test' -n "__defaultasflag-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'" $argv[4..-1]
 end
 
 function __defaultasflag-test_should_offer_completions_for_flags_or_option_values -a expected_commands expected_options option_check
@@ -122,11 +122,11 @@ function __defaultasflag-test_custom_completion
 end
 
 complete -c 'defaultasflag-test' -f
-__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--bin-path' -fa '(__defaultasflag-test_complete_directories)'
-__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--count' -fka ''
-__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--verbose' -fka ''
-__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--log-level' -fka 'DEBUG INFO WARN ERROR'
-__defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '--help' 
+__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--bin-path' '' -fa '(__defaultasflag-test_complete_directories)'
+__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--count' '' -fka ''
+__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--verbose' '' -fka ''
+__defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--log-level' '' -fka 'DEBUG INFO WARN ERROR'
+__defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '--help' ''
 complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_non_repeating_positional "defaultasflag-test" -eq 1' -F
-__defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '-h --help' -d 'Show help information.'
+__defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '-h --help' 'Show help information.'
 complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_non_repeating_positional "defaultasflag-test" -eq 2' -fa 'help' -d 'Show subcommand help information.'

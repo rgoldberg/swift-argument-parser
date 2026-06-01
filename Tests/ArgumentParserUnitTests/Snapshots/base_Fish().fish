@@ -8,12 +8,12 @@ end
 
 function __base-test_complete_repeating_option -a expected_commands expected_options
     __base-test_complete_repeating_flag $argv
-    complete -c 'base-test' -n "__base-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'"
+    complete -c 'base-test' -n "__base-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'" $argv[4..-1]
 end
 
 function __base-test_complete_non_repeating_option -a expected_commands expected_options
     __base-test_complete_non_repeating_flag $argv
-    complete -c 'base-test' -n "__base-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'"
+    complete -c 'base-test' -n "__base-test_should_offer_completions_for_flags_or_option_values '$expected_commands' '$expected_options' 'contains -- \"\$option\" (string split -n \\' \\' -- \$expected_options)'" $argv[4..-1]
 end
 
 function __base-test_should_offer_completions_for_flags_or_option_values -a expected_commands expected_options option_check
@@ -126,25 +126,25 @@ function __base-test_custom_completion
 end
 
 complete -c 'base-test' -f
-__base-test_complete_non_repeating_option 'base-test' '--name' -d 'The user\'s name.' -fka ''
-__base-test_complete_non_repeating_option 'base-test' '--kind' -fka 'one two custom-three'
-__base-test_complete_non_repeating_option 'base-test' '--other-kind' -fka 'b1_fish b2_fish b3_fish'
-__base-test_complete_non_repeating_option 'base-test' '--path1' -F
-__base-test_complete_non_repeating_option 'base-test' '--path2' -F
-__base-test_complete_non_repeating_option 'base-test' '--path3' -fka 'c1_fish c2_fish c3_fish'
-__base-test_complete_non_repeating_flag 'base-test' '--one' 
-__base-test_complete_non_repeating_flag 'base-test' '--two' 
-__base-test_complete_non_repeating_flag 'base-test' '--custom-three' 
-__base-test_complete_repeating_flag 'base-test' '--kind-counter' 
-__base-test_complete_repeating_option 'base-test' '--rep1' -fka ''
-__base-test_complete_repeating_option 'base-test' '-r --rep2' -fka ''
+__base-test_complete_non_repeating_option 'base-test' '--name' 'The user\'s name.' -fka ''
+__base-test_complete_non_repeating_option 'base-test' '--kind' '' -fka 'one two custom-three'
+__base-test_complete_non_repeating_option 'base-test' '--other-kind' '' -fka 'b1_fish b2_fish b3_fish'
+__base-test_complete_non_repeating_option 'base-test' '--path1' '' -F
+__base-test_complete_non_repeating_option 'base-test' '--path2' '' -F
+__base-test_complete_non_repeating_option 'base-test' '--path3' '' -fka 'c1_fish c2_fish c3_fish'
+__base-test_complete_non_repeating_flag 'base-test' '--one' ''
+__base-test_complete_non_repeating_flag 'base-test' '--two' ''
+__base-test_complete_non_repeating_flag 'base-test' '--custom-three' ''
+__base-test_complete_repeating_flag 'base-test' '--kind-counter' ''
+__base-test_complete_repeating_option 'base-test' '--rep1' '' -fka ''
+__base-test_complete_repeating_option 'base-test' '-r --rep2' '' -fka ''
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test" -eq 1' -fka '(__base-test_custom_completion ---completion -- positional@0 (count (__base-test_tokens -pc)) (__base-test_tokens -tC))'
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test" -eq 2' -fka '(__base-test_custom_completion ---completion -- positional@1 (count (__base-test_tokens -pc)) (__base-test_tokens -tC))'
-__base-test_complete_non_repeating_flag 'base-test' '-h --help' -d 'Show help information.'
+__base-test_complete_non_repeating_flag 'base-test' '-h --help' 'Show help information.'
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test" -eq 3' -fa 'sub-command' -d ''
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test" -eq 3' -fa 'escaped-command' -d ''
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test" -eq 3' -fa 'help' -d 'Show subcommand help information.'
-__base-test_complete_non_repeating_flag 'base-test sub-command' '-h --help' -d 'Show help information.'
-__base-test_complete_non_repeating_option 'base-test escaped-command' '--o:n[e' -d 'Escaped chars: \'[]\\.' -fka ''
+__base-test_complete_non_repeating_flag 'base-test sub-command' '-h --help' 'Show help information.'
+__base-test_complete_non_repeating_option 'base-test escaped-command' '--o:n[e' 'Escaped chars: \'[]\\.' -fka ''
 complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test escaped-command" -eq 1' -fka '(__base-test_custom_completion ---completion escaped-command -- positional@0 (count (__base-test_tokens -pc)) (__base-test_tokens -tC))'
-__base-test_complete_non_repeating_flag 'base-test escaped-command' '-h --help' -d 'Show help information.'
+__base-test_complete_non_repeating_flag 'base-test escaped-command' '-h --help' 'Show help information.'
