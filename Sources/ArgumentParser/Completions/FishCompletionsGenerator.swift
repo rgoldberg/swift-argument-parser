@@ -54,16 +54,7 @@ extension CommandInfoV0 {
         test "$status" -eq 0 -a "$commands" = "$expected_commands" -a "$non_repeating_flags_absent" -eq 0 && eval $option_check
     end
 
-    function \(shouldOfferCompletionsForRepeatingPositionalFunctionName)
-        set -l is_repeating_positional 0
-        \(shouldOfferCompletionsForPositionalFunctionName) $argv
-    end
-
-    function \(shouldOfferCompletionsForNonRepeatingPositionalFunctionName)
-        \(shouldOfferCompletionsForPositionalFunctionName) $argv
-    end
-
-    function \(shouldOfferCompletionsForPositionalFunctionName) -Sa expected_commands positional_index_comparison expected_positional_index
+    function \(shouldOfferCompletionsForPositionalFunctionName) -Sa expected_commands positional_index_comparison expected_positional_index is_repeating_positional
         set -l non_repeating_flags
         set -l non_repeating_flags_absent 0
         set -l positional_index 0
@@ -188,10 +179,10 @@ extension CommandInfoV0 {
           \(
             arg.kind == .positional
             ? """
-            \(prefix)\(arg.isRepeating ? shouldOfferCompletionsForRepeatingPositionalFunctionName : shouldOfferCompletionsForNonRepeatingPositionalFunctionName) "\(commandContext.joined(separator: separator))" \({
+            \(prefix)\(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))" \(positionalComparison) \({
               positionalIndex += 1
-              return "\(positionalComparison) \(positionalIndex)"
-            }())'
+              return positionalIndex
+            }())\(arg.isRepeating ? " -r" : "")'
             """
             : """
               \(completeFunctionName(repeating: arg.isRepeating, kind: arg.kind))\
@@ -207,7 +198,7 @@ extension CommandInfoV0 {
       argumentCompletions
       + subcommands.map {
         """
-        \(prefix)\(shouldOfferCompletionsForNonRepeatingPositionalFunctionName) "\(commandContext.joined(separator: separator))"\
+        \(prefix)\(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))"\
          -eq \(positionalIndex)' -fa '\($0.commandName)' -d '\($0.abstract?.fishEscapeForSingleQuotedString() ?? "")'
         """
       }
@@ -292,16 +283,6 @@ extension CommandInfoV0 {
 
   private var shouldOfferCompletionsForFlagsOrOptionValuesFunctionName: String {
     "\(completionFunctionPrefix)_should_offer_completions_for_flags_or_option_values"
-  }
-
-  private var shouldOfferCompletionsForRepeatingPositionalFunctionName: String {
-    "\(completionFunctionPrefix)_should_offer_completions_for_repeating_positional"
-  }
-
-  private var shouldOfferCompletionsForNonRepeatingPositionalFunctionName:
-    String
-  {
-    "\(completionFunctionPrefix)_should_offer_completions_for_non_repeating_positional"
   }
 
   private var shouldOfferCompletionsForPositionalFunctionName: String {

@@ -32,16 +32,7 @@ function __defaultasflag-test_should_offer_completions_for_flags_or_option_value
     test "$status" -eq 0 -a "$commands" = "$expected_commands" -a "$non_repeating_flags_absent" -eq 0 && eval $option_check
 end
 
-function __defaultasflag-test_should_offer_completions_for_repeating_positional
-    set -l is_repeating_positional 0
-    __defaultasflag-test_should_offer_completions_for_positional $argv
-end
-
-function __defaultasflag-test_should_offer_completions_for_non_repeating_positional
-    __defaultasflag-test_should_offer_completions_for_positional $argv
-end
-
-function __defaultasflag-test_should_offer_completions_for_positional -Sa expected_commands positional_index_comparison expected_positional_index
+function __defaultasflag-test_should_offer_completions_for_positional -Sa expected_commands positional_index_comparison expected_positional_index is_repeating_positional
     set -l non_repeating_flags
     set -l non_repeating_flags_absent 0
     set -l positional_index 0
@@ -127,6 +118,6 @@ __defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--count
 __defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--verbose' '' -fka ''
 __defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--log-level' '' -fka 'DEBUG INFO WARN ERROR'
 __defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '--help' ''
-complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_non_repeating_positional "defaultasflag-test" -eq 1' -F
+complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_positional "defaultasflag-test" -eq 1' -F
 __defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '-h --help' 'Show help information.'
-complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_non_repeating_positional "defaultasflag-test" -eq 2' -fa 'help' -d 'Show subcommand help information.'
+complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_positional "defaultasflag-test" -eq 2' -fa 'help' -d 'Show subcommand help information.'

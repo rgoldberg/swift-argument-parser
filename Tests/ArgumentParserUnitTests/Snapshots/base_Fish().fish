@@ -32,16 +32,7 @@ function __base-test_should_offer_completions_for_flags_or_option_values -a expe
     test "$status" -eq 0 -a "$commands" = "$expected_commands" -a "$non_repeating_flags_absent" -eq 0 && eval $option_check
 end
 
-function __base-test_should_offer_completions_for_repeating_positional
-    set -l is_repeating_positional 0
-    __base-test_should_offer_completions_for_positional $argv
-end
-
-function __base-test_should_offer_completions_for_non_repeating_positional
-    __base-test_should_offer_completions_for_positional $argv
-end
-
-function __base-test_should_offer_completions_for_positional -Sa expected_commands positional_index_comparison expected_positional_index
+function __base-test_should_offer_completions_for_positional -Sa expected_commands positional_index_comparison expected_positional_index is_repeating_positional
     set -l non_repeating_flags
     set -l non_repeating_flags_absent 0
     set -l positional_index 0
@@ -138,13 +129,13 @@ __base-test_complete_non_repeating_flag 'base-test' '--custom-three' ''
 __base-test_complete_repeating_flag 'base-test' '--kind-counter' ''
 __base-test_complete_repeating_option 'base-test' '--rep1' '' -fka ''
 __base-test_complete_repeating_option 'base-test' '-r --rep2' '' -fka ''
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test" -eq 1' -fka '(__base-test_custom_completion ---completion -- positional@0 (count (__base-test_tokens -pc)) (__base-test_tokens -tC))'
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test" -eq 2' -fka '(__base-test_custom_completion ---completion -- positional@1 (count (__base-test_tokens -pc)) (__base-test_tokens -tC))'
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_positional "base-test" -eq 1' -fka '(__base-test_custom_completion ---completion -- positional@0 (count (__base-test_tokens -pc)) (__base-test_tokens -tC))'
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_positional "base-test" -eq 2' -fka '(__base-test_custom_completion ---completion -- positional@1 (count (__base-test_tokens -pc)) (__base-test_tokens -tC))'
 __base-test_complete_non_repeating_flag 'base-test' '-h --help' 'Show help information.'
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test" -eq 3' -fa 'sub-command' -d ''
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test" -eq 3' -fa 'escaped-command' -d ''
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test" -eq 3' -fa 'help' -d 'Show subcommand help information.'
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_positional "base-test" -eq 3' -fa 'sub-command' -d ''
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_positional "base-test" -eq 3' -fa 'escaped-command' -d ''
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_positional "base-test" -eq 3' -fa 'help' -d 'Show subcommand help information.'
 __base-test_complete_non_repeating_flag 'base-test sub-command' '-h --help' 'Show help information.'
 __base-test_complete_non_repeating_option 'base-test escaped-command' '--o:n[e' 'Escaped chars: \'[]\\.' -fka ''
-complete -c 'base-test' -n '__base-test_should_offer_completions_for_non_repeating_positional "base-test escaped-command" -eq 1' -fka '(__base-test_custom_completion ---completion escaped-command -- positional@0 (count (__base-test_tokens -pc)) (__base-test_tokens -tC))'
+complete -c 'base-test' -n '__base-test_should_offer_completions_for_positional "base-test escaped-command" -eq 1' -fka '(__base-test_custom_completion ---completion escaped-command -- positional@0 (count (__base-test_tokens -pc)) (__base-test_tokens -tC))'
 __base-test_complete_non_repeating_flag 'base-test escaped-command' '-h --help' 'Show help information.'
