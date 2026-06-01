@@ -20,21 +20,12 @@ extension ToolInfoV0 {
 extension CommandInfoV0 {
   fileprivate var fishCompletionScript: String {
     """
-    function \(completeFunctionName(repeating: true, kind: .flag)) -a expected_commands expected_flags description
+    function \(completeFunctionName(kind: .flag)) -a expected_commands expected_flags description
         complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_flags'" (test -n "$description" && printf '-d %s' $description) -fa "$expected_flags"
     end
 
-    function \(completeFunctionName(repeating: false, kind: .flag)) -a expected_commands expected_flags description
-        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_flags'" (test -n "$description" && printf '-d %s' $description) -fa "$expected_flags"
-    end
-
-    function \(completeFunctionName(repeating: true, kind: .option)) -a expected_commands expected_options
-        \(completeFunctionName(repeating: true, kind: .flag)) $argv
-        complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'" $argv[4..-1]
-    end
-
-    function \(completeFunctionName(repeating: false, kind: .option)) -a expected_commands expected_options
-        \(completeFunctionName(repeating: false, kind: .flag)) $argv
+    function \(completeFunctionName(kind: .option)) -a expected_commands expected_options
+        \(completeFunctionName(kind: .flag)) $argv
         complete -c '\(commandName)' -n "\(shouldOfferCompletionsForFlagsOrOptionValuesFunctionName) '$expected_commands' '$expected_options' 'contains -- \\"\\$option\\" (string split -n \\\\' \\\\' -- \\$expected_options)'" $argv[4..-1]
     end
 
@@ -184,14 +175,15 @@ extension CommandInfoV0 {
         \(
           arg.kind == .positional
           ? """
-          \(prefix)\(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))" \({
+          \(prefix)\(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))"\
+           \({
             positionalIndex += 1
             return positionalIndex
           }())'
           """
           : """
-            \(completeFunctionName(repeating: arg.isRepeating, kind: arg.kind))\
-             '\(commandContext.joined(separator: separator))' '\((arg.names ?? []).map { $0.commonCompletionSynopsisString() }.joined(separator: " "))'
+            \(completeFunctionName(kind: arg.kind)) '\(commandContext.joined(separator: separator))'\
+             '\((arg.names ?? []).map { $0.commonCompletionSynopsisString() }.joined(separator: " "))'
             """
         ) \(argumentSegments(arg).joined(separator: separator))
         """
@@ -280,10 +272,8 @@ extension CommandInfoV0 {
       """
   }
 
-  private func completeFunctionName(
-    repeating: Bool, kind: ArgumentInfoV0.KindV0
-  ) -> String {
-    "\(completionFunctionPrefix)_complete\(repeating ? "" : "_non")_repeating_\(kind)"
+  private func completeFunctionName(kind: ArgumentInfoV0.KindV0) -> String {
+    "\(completionFunctionPrefix)_complete_\(kind)"
   }
 
   private var shouldOfferCompletionsForFlagsOrOptionValuesFunctionName: String {
