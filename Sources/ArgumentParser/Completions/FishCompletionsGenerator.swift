@@ -50,23 +50,35 @@ extension CommandInfoV0 {
         set -l positional_index 0
         set -l option
         set -l commands
+        set -l positional_count 0
+        set -l is_repeating false
         \(parseTokensFunctionName)
         test "$status" -eq 0 -a "$commands" = "$expected_commands" -a "$non_repeating_flags_absent" -eq 0 && eval $option_check
     end
 
-    function \(shouldOfferCompletionsForPositionalFunctionName) -Sa expected_commands positional_index_comparison expected_positional_index is_repeating_positional
+    function \(shouldOfferCompletionsForPositionalFunctionName) -a expected_commands expected_positional_index
         set -l non_repeating_flags
         set -l non_repeating_flags_absent 0
         set -l positional_index 0
         set -l expected_options
         set -l option
         set -l commands
+        set -l positional_count 0
+        set -l is_repeating false
         \(parseTokensFunctionName)
-        test "$status" -eq 0 -a "$commands" = "$expected_commands" -a \\( "$positional_index" "$positional_index_comparison" "$expected_positional_index" \\)
+        test "$status" -eq 0 -a "$commands" = "$expected_commands"; or return 1
+        if test "$is_repeating" = true -a "$expected_positional_index" -eq "$positional_count"
+            test "$positional_index" -ge "$expected_positional_index"
+        else
+            test "$positional_index" -eq "$expected_positional_index"
+        end
     end
 
     function \(parseTokensFunctionName) -S
         set -l unparsed_tokens (\(tokensFunctionName) -pc)
+        set -l unparsed_commands (string split -n ' ' -- $expected_commands)
+        test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
+        set -e unparsed_commands[1]
         switch $unparsed_tokens[1]
     \(commandCases)
         end
@@ -80,10 +92,12 @@ extension CommandInfoV0 {
         end
     end
 
-    function \(parseSubcommandFunctionName) -Sa positional_count
-        set -l option_specs $argv[2..]
+    function \(parseSubcommandFunctionName) -Sa expected_positional_count expected_is_repeating
         set -a commands $unparsed_tokens[1]
         set positional_index 0
+        set positional_count $expected_positional_count
+        set is_repeating $expected_is_repeating
+        set -l option_specs $argv[3..]
         while true
             set -e unparsed_tokens[1]
             argparse -sn "$commands" $option_specs -- $unparsed_tokens 2>| read -l argparse_error
@@ -107,7 +121,7 @@ extension CommandInfoV0 {
                     break
                 end
             end
-            test (count $unparsed_tokens) -eq 0 -o \\( -z "$is_repeating_positional" -a "$positional_index" -gt "$positional_count" \\) && return
+            test (count $unparsed_tokens) -eq 0 -o \\( "$is_repeating" != true -a "$positional_index" -gt "$positional_count" \\) && return
         end
     end
 
@@ -148,6 +162,8 @@ extension CommandInfoV0 {
               ? ""
               : """
 
+                  test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
+                  set -e unparsed_commands[1]
                   switch $unparsed_tokens[1]
               \(subcommands.map(\.commandCases).joined(separator: "\n"))
                   end
@@ -161,35 +177,24 @@ extension CommandInfoV0 {
     let prefix = "complete -c '\(initialCommand)' -n '"
     let subcommands = (subcommands ?? []).filter(\.shouldDisplay)
     var positionalIndex = 0
-    var positionalComparison = "-eq"
     let argumentCompletions =
       completableArguments
       .compactMap { arg in
-        if arg.kind == .positional {
-          guard positionalComparison == "-eq" else {
-            return nil as String?
-          }
-
-          if arg.isRepeating {
-            positionalComparison = "-ge"
-          }
-        }
-
-        return """
-          \(
-            arg.kind == .positional
-            ? """
-            \(prefix)\(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))" \(positionalComparison) \({
-              positionalIndex += 1
-              return positionalIndex
-            }())\(arg.isRepeating ? " -r" : "")'
-            """
-            : """
-              \(completeFunctionName(repeating: arg.isRepeating, kind: arg.kind))\
-               '\(commandContext.joined(separator: separator))' '\((arg.names ?? []).map { $0.commonCompletionSynopsisString() }.joined(separator: " "))'
-              """
-          ) \(argumentSegments(arg).joined(separator: separator))
+        """
+        \(
+          arg.kind == .positional
+          ? """
+          \(prefix)\(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))" \({
+            positionalIndex += 1
+            return positionalIndex
+          }())'
           """
+          : """
+            \(completeFunctionName(repeating: arg.isRepeating, kind: arg.kind))\
+             '\(commandContext.joined(separator: separator))' '\((arg.names ?? []).map { $0.commonCompletionSynopsisString() }.joined(separator: " "))'
+            """
+        ) \(argumentSegments(arg).joined(separator: separator))
+        """
       }
 
     positionalIndex += 1
@@ -199,7 +204,7 @@ extension CommandInfoV0 {
       + subcommands.map {
         """
         \(prefix)\(shouldOfferCompletionsForPositionalFunctionName) "\(commandContext.joined(separator: separator))"\
-         -eq \(positionalIndex)' -fa '\($0.commandName)' -d '\($0.abstract?.fishEscapeForSingleQuotedString() ?? "")'
+         \(positionalIndex)' -fa '\($0.commandName)' -d '\($0.abstract?.fishEscapeForSingleQuotedString() ?? "")'
         """
       }
       + subcommands.flatMap(\.completions)
@@ -271,7 +276,7 @@ extension CommandInfoV0 {
   var positionalArgumentCountArguments: String {
     let positionalArguments = positionalArguments
     return """
-      \(positionalArguments.contains(where: { $0.isRepeating }) ? "-r " : "")\(positionalArguments.count)
+      \(positionalArguments.count) \(positionalArguments.contains(where: { $0.isRepeating }) ? "true" : "false")
       """
   }
 

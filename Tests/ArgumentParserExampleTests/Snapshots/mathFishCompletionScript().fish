@@ -28,43 +28,59 @@ function __math_should_offer_completions_for_flags_or_option_values -a expected_
     set -l positional_index 0
     set -l option
     set -l commands
+    set -l positional_count 0
+    set -l is_repeating false
     __math_parse_tokens
     test "$status" -eq 0 -a "$commands" = "$expected_commands" -a "$non_repeating_flags_absent" -eq 0 && eval $option_check
 end
 
-function __math_should_offer_completions_for_positional -Sa expected_commands positional_index_comparison expected_positional_index is_repeating_positional
+function __math_should_offer_completions_for_positional -a expected_commands expected_positional_index
     set -l non_repeating_flags
     set -l non_repeating_flags_absent 0
     set -l positional_index 0
     set -l expected_options
     set -l option
     set -l commands
+    set -l positional_count 0
+    set -l is_repeating false
     __math_parse_tokens
-    test "$status" -eq 0 -a "$commands" = "$expected_commands" -a \( "$positional_index" "$positional_index_comparison" "$expected_positional_index" \)
+    test "$status" -eq 0 -a "$commands" = "$expected_commands"; or return 1
+    if test "$is_repeating" = true -a "$expected_positional_index" -eq "$positional_count"
+        test "$positional_index" -ge "$expected_positional_index"
+    else
+        test "$positional_index" -eq "$expected_positional_index"
+    end
 end
 
 function __math_parse_tokens -S
     set -l unparsed_tokens (__math_tokens -pc)
+    set -l unparsed_commands (string split -n ' ' -- $expected_commands)
+    test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
+    set -e unparsed_commands[1]
     switch $unparsed_tokens[1]
     case 'math'
-        __math_parse_subcommand 0 'version' 'h/help' || return
+        __math_parse_subcommand 0 false 'version' 'h/help' || return
+        test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
+        set -e unparsed_commands[1]
         switch $unparsed_tokens[1]
         case 'add'
-            __math_parse_subcommand -r 1 'x/hex-output' 'version' 'h/help' || return
+            __math_parse_subcommand 1 true 'x/hex-output' 'version' 'h/help' || return
         case 'multiply'
-            __math_parse_subcommand -r 1 'x/hex-output' 'version' 'h/help' || return
+            __math_parse_subcommand 1 true 'x/hex-output' 'version' 'h/help' || return
         case 'stats'
-            __math_parse_subcommand 0 'version' 'h/help' || return
+            __math_parse_subcommand 0 false 'version' 'h/help' || return
+            test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
+            set -e unparsed_commands[1]
             switch $unparsed_tokens[1]
             case 'average'
-                __math_parse_subcommand -r 1 'kind=' 'version' 'h/help' || return
+                __math_parse_subcommand 1 true 'kind=' 'version' 'h/help' || return
             case 'stdev'
-                __math_parse_subcommand -r 1 'version' 'h/help' || return
+                __math_parse_subcommand 1 true 'version' 'h/help' || return
             case 'quantiles'
-                __math_parse_subcommand -r 4 'file=' 'directory=' 'shell=' 'custom=' 'custom-deprecated=' 'version' 'h/help' || return
+                __math_parse_subcommand 4 true 'file=' 'directory=' 'shell=' 'custom=' 'custom-deprecated=' 'version' 'h/help' || return
             end
         case 'help'
-            __math_parse_subcommand -r 1 'version' || return
+            __math_parse_subcommand 1 true 'version' || return
         end
     end
 end
@@ -77,10 +93,12 @@ function __math_tokens
     end
 end
 
-function __math_parse_subcommand -Sa positional_count
-    set -l option_specs $argv[2..]
+function __math_parse_subcommand -Sa expected_positional_count expected_is_repeating
     set -a commands $unparsed_tokens[1]
     set positional_index 0
+    set positional_count $expected_positional_count
+    set is_repeating $expected_is_repeating
+    set -l option_specs $argv[3..]
     while true
         set -e unparsed_tokens[1]
         argparse -sn "$commands" $option_specs -- $unparsed_tokens 2>| read -l argparse_error
@@ -104,7 +122,7 @@ function __math_parse_subcommand -Sa positional_count
                 break
             end
         end
-        test (count $unparsed_tokens) -eq 0 -o \( -z "$is_repeating_positional" -a "$positional_index" -gt "$positional_count" \) && return
+        test (count $unparsed_tokens) -eq 0 -o \( "$is_repeating" != true -a "$positional_index" -gt "$positional_count" \) && return
     end
 end
 
@@ -129,10 +147,10 @@ end
 complete -c 'math' -f
 __math_complete_non_repeating_flag 'math' '--version' 'Show the version.'
 __math_complete_non_repeating_flag 'math' '-h --help' 'Show help information.'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math" -eq 1' -fa 'add' -d 'Print the sum of the values.'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math" -eq 1' -fa 'multiply' -d 'Print the product of the values.'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math" -eq 1' -fa 'stats' -d 'Calculate descriptive statistics.'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math" -eq 1' -fa 'help' -d 'Show subcommand help information.'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math" 1' -fa 'add' -d 'Print the sum of the values.'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math" 1' -fa 'multiply' -d 'Print the product of the values.'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math" 1' -fa 'stats' -d 'Calculate descriptive statistics.'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math" 1' -fa 'help' -d 'Show subcommand help information.'
 __math_complete_non_repeating_flag 'math add' '--hex-output -x' 'Use hexadecimal notation for the result.'
 __math_complete_non_repeating_flag 'math add' '--version' 'Show the version.'
 __math_complete_non_repeating_flag 'math add' '-h --help' 'Show help information.'
@@ -141,17 +159,17 @@ __math_complete_non_repeating_flag 'math multiply' '--version' 'Show the version
 __math_complete_non_repeating_flag 'math multiply' '-h --help' 'Show help information.'
 __math_complete_non_repeating_flag 'math stats' '--version' 'Show the version.'
 __math_complete_non_repeating_flag 'math stats' '-h --help' 'Show help information.'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats" -eq 1' -fa 'average' -d 'Print the average of the values.'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats" -eq 1' -fa 'stdev' -d 'Print the standard deviation of the values.'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats" -eq 1' -fa 'quantiles' -d 'Print the quantiles of the values (TBD).'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats" 1' -fa 'average' -d 'Print the average of the values.'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats" 1' -fa 'stdev' -d 'Print the standard deviation of the values.'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats" 1' -fa 'quantiles' -d 'Print the quantiles of the values (TBD).'
 __math_complete_non_repeating_option 'math stats average' '--kind' 'The kind of average to provide.' -fka 'mean median mode'
 __math_complete_non_repeating_flag 'math stats average' '--version' 'Show the version.'
 __math_complete_non_repeating_flag 'math stats average' '-h --help' 'Show help information.'
 __math_complete_non_repeating_flag 'math stats stdev' '--version' 'Show the version.'
 __math_complete_non_repeating_flag 'math stats stdev' '-h --help' 'Show help information.'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" -eq 1' -fka 'alphabet alligator branch braggart'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" -eq 2' -fka '(__math_custom_completion ---completion stats quantiles -- positional@1 (count (__math_tokens -pc)) (__math_tokens -tC))'
-complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" -eq 3' -fka '(__math_custom_completion ---completion stats quantiles -- positional@2)'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" 1' -fka 'alphabet alligator branch braggart'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" 2' -fka '(__math_custom_completion ---completion stats quantiles -- positional@1 (count (__math_tokens -pc)) (__math_tokens -tC))'
+complete -c 'math' -n '__math_should_offer_completions_for_positional "math stats quantiles" 3' -fka '(__math_custom_completion ---completion stats quantiles -- positional@2)'
 __math_complete_non_repeating_option 'math stats quantiles' '--file' '' -fa '(set -l exts \'txt\' \'md\';for p in (string match -e -- \'*/\' (commandline -t);or printf \n)*.{$exts};printf %s\n $p;end;__fish_complete_directories (commandline -t) \'\')'
 __math_complete_non_repeating_option 'math stats quantiles' '--directory' '' -fa '(__math_complete_directories)'
 __math_complete_non_repeating_option 'math stats quantiles' '--shell' '' -fka '(head -100 \'/usr/share/dict/words\' | tail -50)'

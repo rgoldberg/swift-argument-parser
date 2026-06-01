@@ -28,29 +28,43 @@ function __defaultasflag-test_should_offer_completions_for_flags_or_option_value
     set -l positional_index 0
     set -l option
     set -l commands
+    set -l positional_count 0
+    set -l is_repeating false
     __defaultasflag-test_parse_tokens
     test "$status" -eq 0 -a "$commands" = "$expected_commands" -a "$non_repeating_flags_absent" -eq 0 && eval $option_check
 end
 
-function __defaultasflag-test_should_offer_completions_for_positional -Sa expected_commands positional_index_comparison expected_positional_index is_repeating_positional
+function __defaultasflag-test_should_offer_completions_for_positional -a expected_commands expected_positional_index
     set -l non_repeating_flags
     set -l non_repeating_flags_absent 0
     set -l positional_index 0
     set -l expected_options
     set -l option
     set -l commands
+    set -l positional_count 0
+    set -l is_repeating false
     __defaultasflag-test_parse_tokens
-    test "$status" -eq 0 -a "$commands" = "$expected_commands" -a \( "$positional_index" "$positional_index_comparison" "$expected_positional_index" \)
+    test "$status" -eq 0 -a "$commands" = "$expected_commands"; or return 1
+    if test "$is_repeating" = true -a "$expected_positional_index" -eq "$positional_count"
+        test "$positional_index" -ge "$expected_positional_index"
+    else
+        test "$positional_index" -eq "$expected_positional_index"
+    end
 end
 
 function __defaultasflag-test_parse_tokens -S
     set -l unparsed_tokens (__defaultasflag-test_tokens -pc)
+    set -l unparsed_commands (string split -n ' ' -- $expected_commands)
+    test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
+    set -e unparsed_commands[1]
     switch $unparsed_tokens[1]
     case 'defaultasflag-test'
-        __defaultasflag-test_parse_subcommand 1 'bin-path=' 'count=' 'verbose=' 'log-level=' 'help' 'h/help' || return
+        __defaultasflag-test_parse_subcommand 1 false 'bin-path=' 'count=' 'verbose=' 'log-level=' 'help' 'h/help' || return
+        test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
+        set -e unparsed_commands[1]
         switch $unparsed_tokens[1]
         case 'help'
-            __defaultasflag-test_parse_subcommand -r 1  || return
+            __defaultasflag-test_parse_subcommand 1 true  || return
         end
     end
 end
@@ -63,10 +77,12 @@ function __defaultasflag-test_tokens
     end
 end
 
-function __defaultasflag-test_parse_subcommand -Sa positional_count
-    set -l option_specs $argv[2..]
+function __defaultasflag-test_parse_subcommand -Sa expected_positional_count expected_is_repeating
     set -a commands $unparsed_tokens[1]
     set positional_index 0
+    set positional_count $expected_positional_count
+    set is_repeating $expected_is_repeating
+    set -l option_specs $argv[3..]
     while true
         set -e unparsed_tokens[1]
         argparse -sn "$commands" $option_specs -- $unparsed_tokens 2>| read -l argparse_error
@@ -90,7 +106,7 @@ function __defaultasflag-test_parse_subcommand -Sa positional_count
                 break
             end
         end
-        test (count $unparsed_tokens) -eq 0 -o \( -z "$is_repeating_positional" -a "$positional_index" -gt "$positional_count" \) && return
+        test (count $unparsed_tokens) -eq 0 -o \( "$is_repeating" != true -a "$positional_index" -gt "$positional_count" \) && return
     end
 end
 
@@ -118,6 +134,6 @@ __defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--count
 __defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--verbose' '' -fka ''
 __defaultasflag-test_complete_non_repeating_option 'defaultasflag-test' '--log-level' '' -fka 'DEBUG INFO WARN ERROR'
 __defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '--help' ''
-complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_positional "defaultasflag-test" -eq 1' -F
+complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_positional "defaultasflag-test" 1' -F
 __defaultasflag-test_complete_non_repeating_flag 'defaultasflag-test' '-h --help' 'Show help information.'
-complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_positional "defaultasflag-test" -eq 2' -fa 'help' -d 'Show subcommand help information.'
+complete -c 'defaultasflag-test' -n '__defaultasflag-test_should_offer_completions_for_positional "defaultasflag-test" 2' -fa 'help' -d 'Show subcommand help information.'
