@@ -80,7 +80,7 @@ extension CommandInfoV0 {
         end
     end
 
-    function \(parseSubcommandFunctionName) -S -a positional_count
+    function \(parseSubcommandFunctionName) -Sa positional_count
         set -l option_specs $argv[2..]
         set -a commands $unparsed_tokens[1]
         set positional_index 0

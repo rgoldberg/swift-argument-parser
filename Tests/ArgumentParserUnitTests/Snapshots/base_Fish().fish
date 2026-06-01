@@ -67,7 +67,7 @@ function __base-test_tokens
     end
 end
 
-function __base-test_parse_subcommand -S -a positional_count
+function __base-test_parse_subcommand -Sa positional_count
     set -l option_specs $argv[2..]
     set -a commands $unparsed_tokens[1]
     set positional_index 0
