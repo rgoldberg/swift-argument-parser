@@ -91,8 +91,6 @@ function __defaultasflag-test_parse_subcommand -Sa expected_positional_count exp
             set _flag_(string replace -a - _ -- (string trim -lc - -- $option)) $option
             argparse -Ssn "$commands" $option_specs -- $unparsed_tokens[..-2] || return
             set unparsed_tokens $argv
-        else
-            return 1
         end
         for non_repeating_flag in $non_repeating_flags
             if set -q -- "$non_repeating_flag"
