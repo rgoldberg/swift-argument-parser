@@ -96,7 +96,7 @@ extension CommandInfoV0 {
         set -l option_specs $argv[3..]
         while true
             set -e unparsed_tokens[1]
-            argparse -sn "$commands" $option_specs -- $unparsed_tokens 2>| read -l argparse_error
+            argparse -Ssn "$commands" $option_specs -- $unparsed_tokens 2>| read -l argparse_error
             if test -z "$argparse_error"
                 set unparsed_tokens $argv
                 set positional_index (math $positional_index + 1)
@@ -106,7 +106,7 @@ extension CommandInfoV0 {
                     return 1
                 end
                 set _flag_(string replace -a - _ -- (string trim -lc - -- $option)) $option
-                argparse -sn "$commands" $option_specs -- $unparsed_tokens[..-2] || return
+                argparse -Ssn "$commands" $option_specs -- $unparsed_tokens[..-2] || return
                 set unparsed_tokens $argv
             else
                 return 1

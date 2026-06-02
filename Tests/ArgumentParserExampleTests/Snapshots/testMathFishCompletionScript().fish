@@ -93,7 +93,7 @@ function __math_parse_subcommand -Sa expected_positional_count expected_is_repea
     set -l option_specs $argv[3..]
     while true
         set -e unparsed_tokens[1]
-        argparse -sn "$commands" $option_specs -- $unparsed_tokens 2>| read -l argparse_error
+        argparse -Ssn "$commands" $option_specs -- $unparsed_tokens 2>| read -l argparse_error
         if test -z "$argparse_error"
             set unparsed_tokens $argv
             set positional_index (math $positional_index + 1)
@@ -103,7 +103,7 @@ function __math_parse_subcommand -Sa expected_positional_count expected_is_repea
                 return 1
             end
             set _flag_(string replace -a - _ -- (string trim -lc - -- $option)) $option
-            argparse -sn "$commands" $option_specs -- $unparsed_tokens[..-2] || return
+            argparse -Ssn "$commands" $option_specs -- $unparsed_tokens[..-2] || return
             set unparsed_tokens $argv
         else
             return 1
