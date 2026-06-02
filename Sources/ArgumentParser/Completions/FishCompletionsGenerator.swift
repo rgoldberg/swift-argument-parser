@@ -132,7 +132,7 @@ extension CommandInfoV0 {
         set -l tokens (\(tokensFunctionName) -p)
         if test -z "$(\(tokensFunctionName) -t)"
             set -l index (count (\(tokensFunctionName) -pc))
-            set tokens $tokens[..$index] \\'\\' $tokens[(math $index + 1)..]
+            set tokens $tokens[..$index] '' $tokens[(math $index + 1)..]
         end
         command $tokens[1] $argv $tokens
     end

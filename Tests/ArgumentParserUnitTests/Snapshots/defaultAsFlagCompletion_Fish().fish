@@ -115,7 +115,7 @@ function __defaultasflag-test_custom_completion
     set -l tokens (__defaultasflag-test_tokens -p)
     if test -z "$(__defaultasflag-test_tokens -t)"
         set -l index (count (__defaultasflag-test_tokens -pc))
-        set tokens $tokens[..$index] \'\' $tokens[(math $index + 1)..]
+        set tokens $tokens[..$index] '' $tokens[(math $index + 1)..]
     end
     command $tokens[1] $argv $tokens
 end

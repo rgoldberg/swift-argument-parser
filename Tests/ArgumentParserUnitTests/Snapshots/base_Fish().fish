@@ -119,7 +119,7 @@ function __base-test_custom_completion
     set -l tokens (__base-test_tokens -p)
     if test -z "$(__base-test_tokens -t)"
         set -l index (count (__base-test_tokens -pc))
-        set tokens $tokens[..$index] \'\' $tokens[(math $index + 1)..]
+        set tokens $tokens[..$index] '' $tokens[(math $index + 1)..]
     end
     command $tokens[1] $argv $tokens
 end
