@@ -67,9 +67,6 @@ extension CommandInfoV0 {
 
     function \(parseTokensFunctionName) -S
         set -l unparsed_tokens (\(tokensFunctionName) -pc)
-        set -l unparsed_commands (string split -n ' ' -- $expected_commands)
-        test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
-        set -e unparsed_commands[1]
         switch $unparsed_tokens[1]
     \(commandCases)
         end
@@ -161,8 +158,6 @@ extension CommandInfoV0 {
               ? ""
               : """
 
-                  test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
-                  set -e unparsed_commands[1]
                   switch $unparsed_tokens[1]
               \(subcommands.map(\.commandCases).joined(separator: "\n"))
                   end

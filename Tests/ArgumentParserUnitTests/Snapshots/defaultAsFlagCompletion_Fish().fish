@@ -45,14 +45,9 @@ end
 
 function __defaultasflag-test_parse_tokens -S
     set -l unparsed_tokens (__defaultasflag-test_tokens -pc)
-    set -l unparsed_commands (string split -n ' ' -- $expected_commands)
-    test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
-    set -e unparsed_commands[1]
     switch $unparsed_tokens[1]
     case 'defaultasflag-test'
         __defaultasflag-test_parse_subcommand 1 false 'bin-path=' 'count=' 'verbose=' 'log-level=' 'help' 'h/help' || return
-        test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
-        set -e unparsed_commands[1]
         switch $unparsed_tokens[1]
         case 'help'
             __defaultasflag-test_parse_subcommand 1 true  || return

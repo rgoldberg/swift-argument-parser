@@ -45,14 +45,9 @@ end
 
 function __math_parse_tokens -S
     set -l unparsed_tokens (__math_tokens -pc)
-    set -l unparsed_commands (string split -n ' ' -- $expected_commands)
-    test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
-    set -e unparsed_commands[1]
     switch $unparsed_tokens[1]
     case 'math'
         __math_parse_subcommand 0 false 'version' 'h/help' || return
-        test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
-        set -e unparsed_commands[1]
         switch $unparsed_tokens[1]
         case 'add'
             __math_parse_subcommand 1 true 'x/hex-output' 'version' 'h/help' || return
@@ -60,8 +55,6 @@ function __math_parse_tokens -S
             __math_parse_subcommand 1 true 'x/hex-output' 'version' 'h/help' || return
         case 'stats'
             __math_parse_subcommand 0 false 'version' 'h/help' || return
-            test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
-            set -e unparsed_commands[1]
             switch $unparsed_tokens[1]
             case 'average'
                 __math_parse_subcommand 1 true 'kind=' 'version' 'h/help' || return

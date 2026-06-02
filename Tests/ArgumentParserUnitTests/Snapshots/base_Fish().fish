@@ -45,14 +45,9 @@ end
 
 function __base-test_parse_tokens -S
     set -l unparsed_tokens (__base-test_tokens -pc)
-    set -l unparsed_commands (string split -n ' ' -- $expected_commands)
-    test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
-    set -e unparsed_commands[1]
     switch $unparsed_tokens[1]
     case 'base-test'
         __base-test_parse_subcommand 2 false 'name=' 'kind=' 'other-kind=' 'path1=' 'path2=' 'path3=' 'one' 'two' 'custom-three' 'kind-counter' 'rep1=+' 'r/rep2=+' 'h/help' || return
-        test "$unparsed_tokens[1]" = "$unparsed_commands[1]" || return
-        set -e unparsed_commands[1]
         switch $unparsed_tokens[1]
         case 'sub-command'
             __base-test_parse_subcommand 0 false 'h/help' || return
