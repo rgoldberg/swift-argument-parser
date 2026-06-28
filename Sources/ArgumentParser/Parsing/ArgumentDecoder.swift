@@ -61,7 +61,7 @@ final class ArgumentDecoder: Decoder {
 }
 
 extension ArgumentDecoder {
-  func element(forKey key: InputKey) -> ParsedValues.Element? {
+  fileprivate func element(forKey key: InputKey) -> ParsedValues.Element? {
     guard let element = values.element(forKey: key) else { return nil }
     usedOrigins.formUnion(element.inputOrigin)
     return element
@@ -89,41 +89,12 @@ extension ArgumentDecoder: ArgumentParserDecoder {
   /// - An element whose `inputOrigin.isDefaultValue` is `true` was planted by
   ///   `ArgumentDefinition.initial` (the declared default), not by the CLI.
   public func wasParsed(_ key: some CodingKey) -> Bool {
-    let inputKey = InputKey(codingKey: key, path: codingPath)
-    // Use values.element(forKey:) directly (not the instance method that
-    // updates usedOrigins) — we are only querying, not consuming.
-    guard let element = values.element(forKey: inputKey) else {
-      return false
-    }
-    return !element.inputOrigin.isDefaultValue
+    values.element(forKey: .init(codingKey: key, path: codingPath)).map { !$0.inputOrigin.isDefaultValue } ?? false
   }
 
-  /// Command names from root to the immediate parent of the command being
-  /// decoded right now.
-  ///
-  /// Derived from `previouslyDecoded`, which accumulates one entry per
-  /// `ParsableCommand` that SAP has fully decoded before this one.  We use
-  /// `CommandConfiguration.commandName` when set, or the lowercased Swift
-  /// type name as a fallback (matching SAP's own auto-derivation logic).
+  /// Command names from root command to the current (sub)command.
   public var commandStack: [String] {
-    previouslyDecoded.compactMap { decoded -> String? in
-      guard let commandType = decoded.commandType else {
-        // This entry is a ParsableArguments group, not a command; skip.
-        return nil
-      }
-      if let explicit = commandType.configuration.commandName {
-        return explicit
-      }
-      // Mirror SAP's internal auto-derivation: lowercase the type name and
-      // strip any module prefix.
-      let typeName = String(describing: commandType)
-      return
-        typeName
-        .components(separatedBy: ".")
-        .last
-        .map { $0.lowercased() }
-        ?? typeName.lowercased()
-    }
+    previouslyDecoded.compactMap { $0.commandType?._commandName }
   }
 }
 
