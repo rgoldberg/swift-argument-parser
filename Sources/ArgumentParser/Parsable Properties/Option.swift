@@ -606,12 +606,6 @@ extension Option {
       })
   }
 
-  @available(
-    *, deprecated,
-    message: """
-      Optional @Options with default values should be declared as non-Optional.
-      """
-  )
   @_disfavoredOverload
   public init<T>(
     wrappedValue _wrappedValue: T?,
@@ -868,12 +862,6 @@ extension Option {
       })
   }
 
-  @available(
-    *, deprecated,
-    message: """
-      Optional @Options with default values should be declared as non-Optional.
-      """
-  )
   @_disfavoredOverload
   @preconcurrency
   public init<T>(
