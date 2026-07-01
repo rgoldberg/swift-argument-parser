@@ -46,7 +46,12 @@
 ///   through this protocol.
 public protocol ArgumentParserDecoder: Decoder {
 
-  // MARK: Provenance
+  /// The command names decoded above the current command, ordered from root to
+  /// immediate parent.
+  ///
+  /// For a tool invoked as `cmd sub`, when decoding `sub`, this returns
+  /// `["cmd"]`. When decoding `sub`, this returns `[]`.
+  var commandStack: [String] { get }
 
   /// Returns `true` when the value for `key` was supplied on the command line,
   /// and `false` when SAP fell back to the property's declared default value.
@@ -64,13 +69,4 @@ public protocol ArgumentParserDecoder: Decoder {
   ///   line, and `false` when SAP fell back to the property's declared default
   ///   value.
   func wasParsed(_ key: some CodingKey) -> Bool
-
-  // MARK: Command stack
-
-  /// The command names decoded above the current command, ordered from root to
-  /// immediate parent.
-  ///
-  /// For a tool invoked as `cmd sub`, when decoding `sub`, this returns
-  /// `["cmd"]`. When decoding `sub`, this returns `[]`.
-  var commandStack: [String] { get }
 }
