@@ -81,15 +81,9 @@ extension ArgumentDecoder {
 
 extension ArgumentDecoder: ArgumentParserDecoder {
   /// Returns `true` when the value for `key` was provided on the command line;
-  /// `false` when SAP used the property's declared default value.
-  ///
-  /// Implementation: look up the `ParsedValues.Element` for the key.
-  /// - A missing element means there was no CLI value and no declared default;
-  ///   `container.decode` would have thrown `noValue` before this is called.
-  /// - An element whose `inputOrigin.isDefaultValue` is `true` was planted by
-  ///   `ArgumentDefinition.initial` (the declared default), not by the CLI.
+  /// `false` when SAP used the property's declared default value or when the key is absent.
   public func wasParsed(_ key: some CodingKey) -> Bool {
-    values.element(forKey: .init(codingKey: key, path: codingPath)).map { !$0.inputOrigin.isDefaultValue } ?? false
+    values.element(forKey: .init(codingKey: key, path: codingPath))?.inputOrigin.elements.contains { $0.baseIndex != nil } ?? false
   }
 
   /// Command names from root command to the current (sub)command.
