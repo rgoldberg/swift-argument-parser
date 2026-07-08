@@ -50,7 +50,7 @@ public protocol ArgumentParserDecoder: Decoder {
   /// immediate parent.
   ///
   /// For a tool invoked as `cmd sub`, when decoding `sub`, this returns
-  /// `["cmd"]`. When decoding `sub`, this returns `[]`.
+  /// `["cmd"]`. When decoding `cmd`, this returns `[]`.
   var commandStack: [String] { get }
 
   /// Returns `true` when the value for `key` was supplied on the command line,
