@@ -87,7 +87,7 @@ extension ArgumentDefinition {
       case .nullary:
         return joinedSynopsisString
       case .optionalUnary:
-        return "\(joinedSynopsisString) [<\(valueName)>]"
+        return "\(joinedSynopsisString)\(optionalValueSynopsis)"
       }
     case .positional:
       return "<\(valueName)>"
@@ -109,13 +109,21 @@ extension ArgumentDefinition {
       case .nullary:
         return name.synopsisString
       case .optionalUnary:
-        return "\(name.synopsisString) [<\(valueName)>]"
+        return "\(name.synopsisString)\(optionalValueSynopsis)"
       }
     case .positional:
       return "<\(valueName)>"
     case .default:
       return ""
     }
+  }
+
+  /// The synopsis of the value of an option whose value is optional, which
+  /// must be attached after `=` for the `.attached` parsing strategy.
+  private var optionalValueSynopsis: String {
+    parsingStrategy == .attached
+      ? "[=<\(valueName)>]"
+      : " [<\(valueName)>]"
   }
 
   var synopsis: String {
@@ -430,11 +438,13 @@ extension ErrorMessageGenerator {
   ) -> String {
     guard let abstract = help(for: key)?.abstract else { return "" }
 
-    let valueName = arguments(for: key).first?.valueName
+    let argument = arguments(for: key).first
+    let valueName = argument?.valueName
 
     switch (name, valueName) {
     case (let n?, let v?):
-      return "\(n.synopsisString) <\(v)>  \(abstract)"
+      return
+        "\(n.synopsisString)\(argument?.nameValueSeparator ?? " ")<\(v)>  \(abstract)"
     case (_, let v?):
       return "<\(v)>  \(abstract)"
     case (_, _):
@@ -483,7 +493,7 @@ extension ErrorMessageGenerator {
     switch (name, valueName) {
     case (let n?, let v?):
       return
-        "The value '\(value)' is invalid for '\(n.synopsisString) <\(v)>'\(customErrorMessage)"
+        "The value '\(value)' is invalid for '\(n.synopsisString)\(argumentValue?.nameValueSeparator ?? " ")<\(v)>'\(customErrorMessage)"
     case (_, let v?):
       return "The value '\(value)' is invalid for '<\(v)>'\(customErrorMessage)"
     case (let n?, _):
@@ -496,6 +506,11 @@ extension ErrorMessageGenerator {
 }
 
 extension ArgumentDefinition {
+  /// The separator between a name of this argument and its value in messages.
+  fileprivate var nameValueSeparator: String {
+    parsingStrategy == .attached ? "=" : " "
+  }
+
   fileprivate var formattedValueList: String {
     if help.allValueStrings.isEmpty {
       return ""

@@ -213,8 +213,8 @@ extension CommandInfoV0 {
 
     let arguments = arguments ?? []
 
-    let flags = arguments.filter { $0.kind == .flag }
-    let options = arguments.filter { $0.kind == .option }
+    let flags = arguments.filter { $0.kindForCompletion == .flag }
+    let options = arguments.filter { $0.kindForCompletion == .option }
     if !flags.flatMap(\.completionWords).isEmpty
       || !options.flatMap(\.completionWords).isEmpty
     {

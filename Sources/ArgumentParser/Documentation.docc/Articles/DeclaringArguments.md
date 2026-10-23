@@ -411,6 +411,32 @@ The parser determines whether a value follows the option:
 
 This works with parsing strategies `.next` and `.scanningForValue`.  The `.unconditional` parsing strategy defeats the purpose by always requiring a value.
 
+#### Accepting only an attached value
+
+Both `.next` and `.scanningForValue` can consume a following argument, so a `defaultAsFlag` option placed before a positional argument takes that argument as its value. The `.attached` parsing strategy instead accepts a value only when it is attached to the option, following the convention for optional arguments of GNU `getopt_long`:
+
+```swift
+struct Show: ParsableCommand {
+    @Option(defaultAsFlag: "json", parsing: .attached, help: "Set the output format.")
+    var format: String?
+
+    @Argument
+    var ids: [Int]
+}
+```
+
+**Command-line behavior:**
+
+```
+% show --format 123          # format = "json", ids = [123]
+% show --format=yaml 123     # format = "yaml", ids = [123]
+% show --format= 123         # format = "",     ids = [123]
+```
+
+A short name that allows joined values also accepts a joined value, such as `-fyaml`.
+
+Help shows an attached-value option as `--format[=<format>]`.
+
 For complete examples and API reference, see the [`default-as-flag`](https://github.com/apple/swift-argument-parser/tree/main/Examples/default-as-flag) example.
 
 

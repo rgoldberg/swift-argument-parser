@@ -60,6 +60,25 @@
         "valueName" : "verbose"
       },
       {
+        "defaultValue" : "json",
+        "isOptional" : true,
+        "isRepeating" : false,
+        "kind" : "option",
+        "names" : [
+          {
+            "kind" : "long",
+            "name" : "format"
+          }
+        ],
+        "parsingStrategy" : "attached",
+        "preferredName" : {
+          "kind" : "long",
+          "name" : "format"
+        },
+        "shouldDisplay" : true,
+        "valueName" : "format"
+      },
+      {
         "isOptional" : false,
         "isRepeating" : false,
         "kind" : "positional",

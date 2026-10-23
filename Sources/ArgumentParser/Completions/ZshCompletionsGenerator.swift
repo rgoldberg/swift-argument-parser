@@ -96,7 +96,7 @@ extension CommandInfoV0 {
           """
       }
 
-      switch arg.kind {
+      switch arg.kindForCompletion {
       case .option, .positional:
         let (argumentAction, setupScript) = argumentActionAndSetupScript(arg)
         return (

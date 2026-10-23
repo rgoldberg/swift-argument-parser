@@ -46,6 +46,7 @@ _defaultasflag-test() {
         '--count:count:'
         '--verbose:verbose:'
         '--log-level:log-level:{__defaultasflag-test_complete "${___log_level[@]}"}'
+        '--format'
         '--help'
         ':input:_files'
         '(-h --help)'{-h,--help}'[Show help information.]'

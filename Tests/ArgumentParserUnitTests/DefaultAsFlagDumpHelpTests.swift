@@ -39,6 +39,9 @@ extension DefaultAsFlagDumpHelpTests {
     @Option(name: .long, defaultAsFlag: true)
     var verbose: Bool?
 
+    @Option(name: .long, defaultAsFlag: "json", parsing: .attached)
+    var format: String?
+
     @Argument
     var input: String
   }

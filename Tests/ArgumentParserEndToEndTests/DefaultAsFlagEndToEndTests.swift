@@ -252,6 +252,135 @@ import Testing
     }
   }
 
+  // MARK: - Tests for the attached parsing strategy
+
+  private struct CommandWithAttachedDefaultAsFlag: ParsableCommand {
+    @Option(defaultAsFlag: "flag", parsing: .attached)
+    var json: String?
+
+    @Option(
+      name: [.long, .customShort("c", allowingJoined: true)],
+      defaultAsFlag: 1, parsing: .attached, help: "The count.")
+    var count: Int?
+
+    @Option(name: .customShort("s"), defaultAsFlag: "flag", parsing: .attached)
+    var short: String?
+
+    @Argument
+    var ids: [String] = []
+  }
+
+  @Test func attachedDefaultAsFlagWithoutValue() throws {
+    expectParse(CommandWithAttachedDefaultAsFlag.self, []) { cmd in
+      #expect(cmd.json == nil)
+      #expect(cmd.count == nil)
+      #expect(cmd.ids == [])
+    }
+
+    expectParse(CommandWithAttachedDefaultAsFlag.self, ["--json"]) { cmd in
+      #expect(cmd.json == "flag")
+      #expect(cmd.ids == [])
+    }
+
+    expectParse(CommandWithAttachedDefaultAsFlag.self, ["-c"]) { cmd in
+      #expect(cmd.count == 1)
+      #expect(cmd.ids == [])
+    }
+  }
+
+  @Test func attachedDefaultAsFlagNeverConsumesNextArgument() throws {
+    expectParse(CommandWithAttachedDefaultAsFlag.self, ["--json", "123"]) {
+      cmd in
+      #expect(cmd.json == "flag")
+      #expect(cmd.ids == ["123"])
+    }
+
+    expectParse(
+      CommandWithAttachedDefaultAsFlag.self, ["--json", "--count", "5"]
+    ) { cmd in
+      #expect(cmd.json == "flag")
+      #expect(cmd.count == 1)
+      #expect(cmd.ids == ["5"])
+    }
+
+    expectParse(CommandWithAttachedDefaultAsFlag.self, ["-c", "5"]) { cmd in
+      #expect(cmd.count == 1)
+      #expect(cmd.ids == ["5"])
+    }
+
+    expectParse(CommandWithAttachedDefaultAsFlag.self, ["123", "--json"]) {
+      cmd in
+      #expect(cmd.json == "flag")
+      #expect(cmd.ids == ["123"])
+    }
+  }
+
+  @Test func attachedDefaultAsFlagWithAttachedValue() throws {
+    expectParse(
+      CommandWithAttachedDefaultAsFlag.self, ["--json=value", "123"]
+    ) { cmd in
+      #expect(cmd.json == "value")
+      #expect(cmd.ids == ["123"])
+    }
+
+    expectParse(CommandWithAttachedDefaultAsFlag.self, ["--json=", "123"]) {
+      cmd in
+      #expect(cmd.json == "")
+      #expect(cmd.ids == ["123"])
+    }
+
+    expectParse(CommandWithAttachedDefaultAsFlag.self, ["--count=5", "6"]) {
+      cmd in
+      #expect(cmd.count == 5)
+      #expect(cmd.ids == ["6"])
+    }
+
+    expectParse(CommandWithAttachedDefaultAsFlag.self, ["-c5", "6"]) { cmd in
+      #expect(cmd.count == 5)
+      #expect(cmd.ids == ["6"])
+    }
+
+    expectParse(CommandWithAttachedDefaultAsFlag.self, ["-s=value", "6"]) {
+      cmd in
+      #expect(cmd.short == "value")
+      #expect(cmd.ids == ["6"])
+    }
+
+    expectParse(CommandWithAttachedDefaultAsFlag.self, ["-s", "6"]) { cmd in
+      #expect(cmd.short == "flag")
+      #expect(cmd.ids == ["6"])
+    }
+  }
+
+  @Test func attachedDefaultAsFlagWithInvalidAttachedValue() throws {
+    expectErrorMessage(
+      CommandWithAttachedDefaultAsFlag.self, ["--count=abc"],
+      "The value 'abc' is invalid for '--count=<count>'")
+
+    expectErrorMessage(
+      CommandWithAttachedDefaultAsFlag.self, ["-cabc"],
+      "The value 'abc' is invalid for '-c=<count>'")
+
+    expectFullErrorMessage(
+      CommandWithAttachedDefaultAsFlag.self, ["--count=abc"],
+      """
+      Error: The value 'abc' is invalid for '--count=<count>'
+      Help:  --count=<count>  The count.
+      Usage: command-with-attached-default-as-flag [--json[=<json>]] [--count[=<count>]] [-s[=<s>]] [<ids> ...]
+        See 'command-with-attached-default-as-flag --help' for more information.
+      """)
+  }
+
+  @Test func attachedDefaultAsFlagWithTerminator() throws {
+    expectParse(
+      CommandWithAttachedDefaultAsFlag.self, ["--json", "--", "--count=5"]
+    ) { cmd in
+      #expect(cmd.json == "flag")
+      #expect(cmd.count == nil)
+      #expect(cmd.ids == ["--count=5"])
+    }
+  }
+
   // MARK: - Tests for parsing strategy compilation restrictions
 
   @Test func defaultAsFlagCompilationRestrictionsWork() throws {
@@ -265,6 +394,9 @@ import Testing
 
       @Option(defaultAsFlag: "scanning", parsing: .scanningForValue)
       var scanningStrategy: String?
+
+      @Option(defaultAsFlag: "attached", parsing: .attached)
+      var attachedStrategy: String?
     }
 
     // Verify that the allowed strategies work correctly

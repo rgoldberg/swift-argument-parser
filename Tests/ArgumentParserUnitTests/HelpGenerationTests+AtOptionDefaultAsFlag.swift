@@ -88,6 +88,41 @@ extension HelpGenerationTests {
         """)
   }
 
+  struct AttachedDefaultAsFlag: ParsableArguments {
+    @Option(
+      name: .shortAndLong, defaultAsFlag: "default", parsing: .attached,
+      help: "An option whose value must be attached.")
+    var attached: String?
+
+    @Option(
+      name: [.customShort("o")], defaultAsFlag: "s", parsing: .attached,
+      help: "A short-only option whose value must be attached.")
+    var shortOnly: String?
+
+    @Argument(help: "A positional argument.")
+    var positional: [String] = []
+  }
+
+  @Test func attachedDefaultAsFlag() async throws {
+    try requireHelp(
+      .default, for: AttachedDefaultAsFlag.self,
+      equals: """
+        USAGE: attached_default_as_flag [--attached[=<attached>]] [-o[=<o>]] [<positional> ...]
+
+        ARGUMENTS:
+          <positional>            A positional argument.
+
+        OPTIONS:
+          -a, --attached[=<attached>]
+                                  An option whose value must be attached. (default as
+                                  flag: default)
+          -o[=<o>]                A short-only option whose value must be attached.
+                                  (default as flag: s)
+          -h, --help              Show help information.
+
+        """)
+  }
+
   struct MixedOptionTypes: ParsableArguments {
     @Flag(help: "A regular flag.")
     var flag: Bool = false

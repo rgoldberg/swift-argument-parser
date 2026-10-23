@@ -163,8 +163,9 @@ public struct SingleValueParsingStrategy: Hashable {
 
 /// The strategy to use when parsing a single value from `@Option` arguments with `defaultAsFlag`.
 ///
-/// This is a subset of `SingleValueParsingStrategy` that excludes strategies incompatible
-/// with default-as-flag behavior.
+/// This excludes the `SingleValueParsingStrategy` strategies incompatible with
+/// default-as-flag behavior, and adds `attached`, which suits only an option
+/// whose value is optional.
 public struct DefaultAsFlagParsingStrategy: Hashable {
   internal var base: ArgumentDefinition.ParsingStrategy
 
@@ -196,6 +197,22 @@ public struct DefaultAsFlagParsingStrategy: Hashable {
   /// This is the **default behavior** for `defaultAsFlag` options.
   public static var scanningForValue: DefaultAsFlagParsingStrategy {
     self.init(base: .scanningForValue)
+  }
+
+  /// Parse only a value attached to the option, never a separate input.
+  ///
+  /// For inputs such as `--foo=foo`, this would parse `foo` as the value,
+  /// and `--foo=` would parse the empty string as the value. A short name
+  /// that allows joined values also accepts a joined value, such as `-ffoo`.
+  ///
+  /// For inputs such as `--foo bar`, this would use the `defaultAsFlag` value
+  /// for `foo`, leaving `bar` for the next positional argument. This allows a
+  /// `defaultAsFlag` option to precede a positional argument, following the
+  /// convention for optional arguments of GNU `getopt_long`.
+  ///
+  /// Generated help shows such an option as `--foo[=<foo>]`.
+  public static var attached: DefaultAsFlagParsingStrategy {
+    self.init(base: .attached)
   }
 }
 

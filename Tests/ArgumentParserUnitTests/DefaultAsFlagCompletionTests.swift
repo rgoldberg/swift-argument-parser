@@ -65,6 +65,13 @@ extension SerializedTests.DefaultAsFlagCompletionTests {
     )
     var logLevel: String?
 
+    @Option(
+      defaultAsFlag: "json",
+      parsing: .attached,
+      completion: .list(["json", "yaml"])
+    )
+    var format: String?
+
     @Flag
     var help: Bool = false
 

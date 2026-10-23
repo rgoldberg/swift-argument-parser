@@ -241,6 +241,14 @@ extension CommandInfoV0 {
 }
 
 extension ArgumentInfoV0 {
+  /// The kind of argument to complete this argument as.
+  ///
+  /// An option whose value must be attached to it (e.g., `--foo=bar`) never
+  /// takes the next word as its value, so it is completed as a flag.
+  var kindForCompletion: KindV0 {
+    parsingStrategy == .attached ? .flag : kind
+  }
+
   /// Returns a string with the arguments for the callback to generate custom
   /// completions for this argument.
   func commonCustomCompletionCall(command: CommandInfoV0) -> String {

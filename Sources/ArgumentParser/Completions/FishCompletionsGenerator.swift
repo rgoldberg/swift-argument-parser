@@ -188,9 +188,9 @@ extension CommandInfoV0 {
     }
     let r = arg.kind == .positional ? "" : "r"
     let completions =
-      switch arg.completionKind {
+      switch arg.kindForCompletion == .flag ? nil : arg.completionKind {
       case .none:
-        switch arg.kind {
+        switch arg.kindForCompletion {
         case .positional,
           .option:
           "-\(r)fka ''"
@@ -282,18 +282,25 @@ extension CommandInfoV0 {
 extension ArgumentInfoV0 {
   fileprivate var optionSpec: String? {
     name(.short).map { shortName in
-      name(.long).map { optionSpecRequiresValue("\(shortName)/\($0)") }
-        ?? optionSpecRequiresValue(shortName)
+      name(.long).map { optionSpecAcceptingValue("\(shortName)/\($0)") }
+        ?? optionSpecAcceptingValue(shortName)
     }
-      ?? name(.long).map(optionSpecRequiresValue(_:))
+      ?? name(.long).map(optionSpecAcceptingValue(_:))
   }
 
   private func name(_ nameKind: NameInfoV0.KindV0) -> String? {
     (names ?? []).first(where: { $0.kind == nameKind })?.name
   }
 
-  private func optionSpecRequiresValue(_ optionSpec: String) -> String {
-    kind == .option ? "\(optionSpec)=\(isRepeating ? "+" : "")" : optionSpec
+  private func optionSpecAcceptingValue(_ optionSpec: String) -> String {
+    switch (kind, parsingStrategy) {
+    case (.option, .attached):
+      "\(optionSpec)=?"
+    case (.option, _):
+      "\(optionSpec)=\(isRepeating ? "+" : "")"
+    default:
+      optionSpec
+    }
   }
 }
 

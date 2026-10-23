@@ -154,6 +154,9 @@ public struct ArgumentInfoV0: Codable, Hashable {
     case scanningForValue
     /// Parse the next `SplitArguments.Element` as a value, regardless of its type.
     case unconditional
+    /// Parse only a value attached to the option (e.g., `--foo=bar`), never a
+    /// separate `SplitArguments.Element`.
+    case attached
     /// Parse multiple `SplitArguments.Element.value` up to the next non-`.value`
     case upToNextOption
     /// Parse all remaining `SplitArguments.Element` as values, regardless of its type.
