@@ -294,14 +294,9 @@ extension ArgumentInfoV0 {
   }
 
   private func optionSpecAcceptingValue(_ optionSpec: String) -> String {
-    switch (kind, parsingStrategy) {
-    case (.option, .attached):
-      "\(optionSpec)=?"
-    case (.option, _):
-      "\(optionSpec)=\(isRepeating ? "+" : "")"
-    default:
-      optionSpec
-    }
+    kind == .option
+      ? "\(optionSpec)=\(parsingStrategy == .attached ? "?" : isRepeating ? "+" : "")"
+      : optionSpec
   }
 }
 
