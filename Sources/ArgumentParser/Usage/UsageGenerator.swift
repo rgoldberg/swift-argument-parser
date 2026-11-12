@@ -81,13 +81,13 @@ extension ArgumentDefinition {
         .map { $0.synopsisString }
         .joined(separator: ", ")
 
-      switch update {
+      return switch update {
       case .unary:
-        return "\(joinedSynopsisString) <\(valueName)>"
+        "\(joinedSynopsisString) <\(valueName)>"
       case .nullary:
-        return joinedSynopsisString
+        joinedSynopsisString
       case .optionalUnary:
-        return "\(joinedSynopsisString)\(optionalValueSynopsis)"
+        "\(joinedSynopsisString)\(optionalValueSynopsis)"
       }
     case .positional:
       return "<\(valueName)>"
@@ -103,13 +103,13 @@ extension ArgumentDefinition {
         fatalError("preferredName cannot be nil for named arguments")
       }
 
-      switch update {
+      return switch update {
       case .unary:
-        return "\(name.synopsisString) <\(valueName)>"
+        "\(name.synopsisString) <\(valueName)>"
       case .nullary:
-        return name.synopsisString
+        name.synopsisString
       case .optionalUnary:
-        return "\(name.synopsisString)\(optionalValueSynopsis)"
+        "\(name.synopsisString)\(optionalValueSynopsis)"
       }
     case .positional:
       return "<\(valueName)>"
@@ -121,9 +121,7 @@ extension ArgumentDefinition {
   /// The synopsis of the value of an option whose value is optional, which
   /// must be attached after `=` for the `.attached` parsing strategy.
   private var optionalValueSynopsis: String {
-    parsingStrategy == .attached
-      ? "[=<\(valueName)>]"
-      : " [<\(valueName)>]"
+    parsingStrategy == .attached ? "[=<\(valueName)>]" : " [<\(valueName)>]"
   }
 
   var synopsis: String {
@@ -439,16 +437,14 @@ extension ErrorMessageGenerator {
     guard let abstract = help(for: key)?.abstract else { return "" }
 
     let argument = arguments(for: key).first
-    let valueName = argument?.valueName
 
-    switch (name, valueName) {
-    case (let n?, let v?):
-      return
-        "\(n.synopsisString)\(argument?.nameValueSeparator ?? " ")<\(v)>  \(abstract)"
-    case (_, let v?):
-      return "<\(v)>  \(abstract)"
+    return switch (name, argument) {
+    case (let n?, let a?):
+      "\(n.synopsisString)\(a.nameValueSeparator)<\(a.valueName)>  \(abstract)"
+    case (_, let a?):
+      "<\(a.valueName)>  \(abstract)"
     case (_, _):
-      return ""
+      ""
     }
   }
 
@@ -476,38 +472,29 @@ extension ErrorMessageGenerator {
     error: Error?
   ) -> String {
     let argumentValue = arguments(for: key).first
-    let valueName = argumentValue?.valueName
+    let suffix =
+      switch (name, argumentValue) {
+      case (let n?, let a?):
+        " for '\(n.synopsisString)\(a.nameValueSeparator)<\(a.valueName)>'"
+      case (_, let a?):
+        " for '<\(a.valueName)>'"
+      case (let n?, _):
+        " for '\(n.synopsisString)'"
+      case (_, _):
+        ""
+      }
 
-    // We want to make the "best effort" in producing a custom error message.
-    // We favor `LocalizedError.errorDescription` and fall back to
-    // `CustomStringConvertible`. To opt in, return your custom error message
-    // as the `description` property of `CustomStringConvertible`.
-    let customErrorMessage: String
-    switch error {
-    case .some(let error):
-      customErrorMessage = ": " + error.describe()
-    case .none:
-      customErrorMessage = argumentValue?.formattedValueList ?? ""
-    }
-
-    switch (name, valueName) {
-    case (let n?, let v?):
-      return
-        "The value '\(value)' is invalid for '\(n.synopsisString)\(argumentValue?.nameValueSeparator ?? " ")<\(v)>'\(customErrorMessage)"
-    case (_, let v?):
-      return "The value '\(value)' is invalid for '<\(v)>'\(customErrorMessage)"
-    case (let n?, _):
-      return
-        "The value '\(value)' is invalid for '\(n.synopsisString)'\(customErrorMessage)"
-    case (nil, nil):
-      return "The value '\(value)' is invalid.\(customErrorMessage)"
-    }
+    // Make a "best effort" custom error message. Favor `LocalizedError.errorDescription`,
+    // falling back to `CustomStringConvertible`. To opt in, return a custom error message
+    // as the `CustomStringConvertible.description` property.
+    return
+      "The value '\(value)' is invalid\(suffix)\(error.map { ": " + $0.describe() } ?? argumentValue?.formattedValueList ?? "")"
   }
 }
 
 extension ArgumentDefinition {
   /// The separator between a name of this argument and its value in messages.
-  fileprivate var nameValueSeparator: String {
+  fileprivate var nameValueSeparator: Character {  // TODO: OrderedSet
     parsingStrategy == .attached ? "=" : " "
   }
 

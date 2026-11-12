@@ -9,7 +9,9 @@ Add new items at the end of the relevant section under **Unreleased**.
 ### Additions
 
 - `CommandConfiguration` now accepts a `helpBanner`, a string printed verbatim above the overview on a command's help screen and inherited by its subcommands unless they provide their own banner or the empty string.
-- A new `.attached` parsing strategy for options that use `defaultAsFlag:`, which accepts a value only when attached to the option (e.g., `--format=json`), so that the option never consumes the next argument (e.g., `--format json` leaves `json` for a positional argument). Help shows such an option as `--format[=<format>]`.
+- Attached option values refactor supporting:
+  - Custom option name-value delimiters, e.g., `--option=value`, `--option:value`, etc. (previously hardcoded to `=`).
+  - Attached-only, separated-only, or either option values (previously hardcoded to "either").
 
 ---
 

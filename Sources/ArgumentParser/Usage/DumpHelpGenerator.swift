@@ -162,8 +162,6 @@ extension ArgumentInfoV0.ParsingStrategyV0 {
       self = .scanningForValue
     case .unconditional:
       self = .unconditional
-    case .attached:
-      self = .attached
     case .upToNextOption:
       self = .upToNextOption
     case .allRemainingInput:
@@ -172,6 +170,8 @@ extension ArgumentInfoV0.ParsingStrategyV0 {
       self = .postTerminator
     case .allUnrecognized:
       self = .allUnrecognized
+    case .attached:
+      self = .attached
     }
   }
 }

@@ -9,9 +9,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-import ArgumentParser
 import ArgumentParserTestHelpers
 import Testing
+
+@testable import ArgumentParser
 
 @Suite struct DefaultAsFlagEndToEndTests {
 

@@ -110,11 +110,41 @@ extension Option: CustomStringConvertible {
 extension Option: Sendable where Value: Sendable {}
 extension Option: DecodableParsedWrapper where Value: Decodable {}
 
+/// A protocol for option parsing strategies.
+internal protocol OptionParsingStrategy {
+  init(base: ArgumentDefinition.ParsingStrategy, delimiters: Set<Character>)
+}
+
+extension OptionParsingStrategy {
+  init(
+    base: ArgumentDefinition.ParsingStrategy,
+    delimiters: Set<Character> = ["="],
+  ) {
+    self.init(base: base, delimiters: delimiters)
+  }
+
+  public static var attached: Self {
+    attached()
+  }
+
+  /// Requires values to be attached using one of the specified delimiters (e.g., `--option=value`).
+  public static func attached(delimiters: Character...) -> Self {
+    attached(delimiters: .init(delimiters))
+  }
+
+  /// Requires values to be attached using one of the specified delimiters (e.g., `--option=value`).
+  public static func attached(delimiters: Set<Character> = ["="]) -> Self {
+    precondition(!delimiters.isEmpty, "delimiters must not be empty")
+    return Self(base: .attached, delimiters: delimiters)
+  }
+}
+
 /// The strategy to use when parsing a single value from `@Option` arguments.
 ///
 /// - SeeAlso: ``ArrayParsingStrategy``
-public struct SingleValueParsingStrategy: Hashable {
+public struct SingleValueParsingStrategy: OptionParsingStrategy {
   internal var base: ArgumentDefinition.ParsingStrategy
+  public var delimiters: Set<Character>
 
   /// Parse the input after the option and expect it to be a value.
   ///
@@ -127,8 +157,16 @@ public struct SingleValueParsingStrategy: Hashable {
   ///     Usage: command [--foo <foo>]
   ///
   /// This is the **default behavior** for `@Option`-wrapped properties.
-  public static var next: SingleValueParsingStrategy {
-    self.init(base: .default)
+  public static var next: Self {
+    next()
+  }
+
+  public static func next(delimiters: Character...) -> Self {
+    next(delimiters: .init(delimiters))
+  }
+
+  public static func next(delimiters: Set<Character> = ["="]) -> Self {
+    Self(base: .default, delimiters: delimiters)
   }
 
   /// Parse the next input, even if it could be interpreted as an option or
@@ -143,8 +181,16 @@ public struct SingleValueParsingStrategy: Hashable {
   /// interpreted as the start of another option.
   ///
   /// - Note: This is usually *not* what users would expect. Use with caution.
-  public static var unconditional: SingleValueParsingStrategy {
-    self.init(base: .unconditional)
+  public static var unconditional: Self {
+    unconditional()
+  }
+
+  public static func unconditional(delimiters: Character...) -> Self {
+    unconditional(delimiters: .init(delimiters))
+  }
+
+  public static func unconditional(delimiters: Set<Character> = ["="]) -> Self {
+    Self(base: .unconditional, delimiters: delimiters)
   }
 
   /// Parse the next input, as long as that input can't be interpreted as
@@ -156,18 +202,31 @@ public struct SingleValueParsingStrategy: Hashable {
   ///
   /// For example, if `--foo` takes a value, then the input `--foo --bar bar`
   /// would be parsed such that the value `bar` is used for `--foo`.
-  public static var scanningForValue: SingleValueParsingStrategy {
-    self.init(base: .scanningForValue)
+  public static var scanningForValue: Self {
+    scanningForValue()
+  }
+
+  public static func scanningForValue(delimiters: Character...) -> Self {
+    scanningForValue(delimiters: .init(delimiters))
+  }
+
+  public static func scanningForValue(
+    delimiters: Set<Character> = ["="],
+  ) -> Self {
+    Self(base: .scanningForValue, delimiters: delimiters)
   }
 }
 
+extension SingleValueParsingStrategy: Hashable {}
+extension SingleValueParsingStrategy: Sendable {}
+
 /// The strategy to use when parsing a single value from `@Option` arguments with `defaultAsFlag`.
 ///
-/// This excludes the `SingleValueParsingStrategy` strategies incompatible with
-/// default-as-flag behavior, and adds `attached`, which suits only an option
-/// whose value is optional.
-public struct DefaultAsFlagParsingStrategy: Hashable {
+/// This is a subset of `SingleValueParsingStrategy` that excludes strategies incompatible
+/// with default-as-flag behavior.
+public struct DefaultAsFlagParsingStrategy: OptionParsingStrategy {
   internal var base: ArgumentDefinition.ParsingStrategy
+  public var delimiters: Set<Character>
 
   /// Parse the input after the option and expect it to be a value.
   ///
@@ -180,8 +239,16 @@ public struct DefaultAsFlagParsingStrategy: Hashable {
   ///     Usage: command [--foo <foo>]
   ///
   /// When used with `defaultAsFlag`, if no value is found, the default flag value is used.
-  public static var next: DefaultAsFlagParsingStrategy {
-    self.init(base: .default)
+  public static var next: Self {
+    next()
+  }
+
+  public static func next(delimiters: Character...) -> Self {
+    next(delimiters: .init(delimiters))
+  }
+
+  public static func next(delimiters: Set<Character> = ["="]) -> Self {
+    Self(base: .default, delimiters: delimiters)
   }
 
   /// Parse the next input, as long as that input can't be interpreted as
@@ -195,34 +262,28 @@ public struct DefaultAsFlagParsingStrategy: Hashable {
   /// would be parsed such that the value `bar` is used for `--foo`.
   ///
   /// This is the **default behavior** for `defaultAsFlag` options.
-  public static var scanningForValue: DefaultAsFlagParsingStrategy {
-    self.init(base: .scanningForValue)
+  public static var scanningForValue: Self {
+    scanningForValue()
   }
 
-  /// Parse only a value attached to the option, never a separate input.
-  ///
-  /// For inputs such as `--foo=foo`, this would parse `foo` as the value,
-  /// and `--foo=` would parse the empty string as the value. A short name
-  /// that allows joined values also accepts a joined value, such as `-ffoo`.
-  ///
-  /// For inputs such as `--foo bar`, this would use the `defaultAsFlag` value
-  /// for `foo`, leaving `bar` for the next positional argument. This allows a
-  /// `defaultAsFlag` option to precede a positional argument, following the
-  /// convention for optional arguments of GNU `getopt_long`.
-  ///
-  /// Generated help shows such an option as `--foo[=<foo>]`.
-  public static var attached: DefaultAsFlagParsingStrategy {
-    self.init(base: .attached)
+  public static func scanningForValue(delimiters: Character...) -> Self {
+    scanningForValue(delimiters: .init(delimiters))
+  }
+
+  public static func scanningForValue(
+    delimiters: Set<Character> = ["="],
+  ) -> Self {
+    Self(base: .scanningForValue, delimiters: delimiters)
   }
 }
 
-extension SingleValueParsingStrategy: Sendable {}
+extension DefaultAsFlagParsingStrategy: Hashable {}
 extension DefaultAsFlagParsingStrategy: Sendable {}
 
-/// The strategy to use when parsing multiple values from `@Option` arguments into an
-/// array.
-public struct ArrayParsingStrategy: Hashable {
+/// The strategy to use when parsing multiple values from `@Option` arguments into an array.
+public struct ArrayParsingStrategy: OptionParsingStrategy {
   internal var base: ArgumentDefinition.ParsingStrategy
+  public var delimiters: Set<Character>
 
   /// Parse one value per option, joining multiple into an array.
   ///
@@ -236,8 +297,16 @@ public struct ArrayParsingStrategy: Hashable {
   ///     such, the value for this option will be the next value (non-option) in the input. For the
   ///     above example, the input `--read --name Foo Bar` would parse `Foo` into
   ///     `read` (and `Bar` into `name`).
-  public static var singleValue: ArrayParsingStrategy {
-    self.init(base: .default)
+  public static var singleValue: Self {
+    singleValue()
+  }
+
+  public static func singleValue(delimiters: Character...) -> Self {
+    singleValue(delimiters: .init(delimiters))
+  }
+
+  public static func singleValue(delimiters: Set<Character> = ["="]) -> Self {
+    Self(base: .default, delimiters: delimiters)
   }
 
   /// Parse the value immediately after the option while allowing repeating options, joining multiple into an array.
@@ -253,8 +322,20 @@ public struct ArrayParsingStrategy: Hashable {
   /// - Note: However, the input `--read --name Foo Bar --read baz` would result in
   /// `read` being set to the array `["--name", "baz"]`. This is usually *not* what users
   /// would expect. Use with caution.
-  public static var unconditionalSingleValue: ArrayParsingStrategy {
-    self.init(base: .unconditional)
+  public static var unconditionalSingleValue: Self {
+    unconditionalSingleValue()
+  }
+
+  public static func unconditionalSingleValue(
+    delimiters: Character...,
+  ) -> Self {
+    unconditionalSingleValue(delimiters: .init(delimiters))
+  }
+
+  public static func unconditionalSingleValue(
+    delimiters: Set<Character> = ["="],
+  ) -> Self {
+    Self(base: .unconditional, delimiters: delimiters)
   }
 
   /// Parse all values up to the next option.
@@ -267,8 +348,18 @@ public struct ArrayParsingStrategy: Hashable {
   /// Parsing stops as soon as there's another option in the input such that
   /// `--files foo bar --verbose` would also set `files` to the array
   /// `["foo", "bar"]`.
-  public static var upToNextOption: ArrayParsingStrategy {
-    self.init(base: .upToNextOption)
+  public static var upToNextOption: Self {
+    upToNextOption()
+  }
+
+  public static func upToNextOption(delimiters: Character...) -> Self {
+    upToNextOption(delimiters: .init(delimiters))
+  }
+
+  public static func upToNextOption(
+    delimiters: Set<Character> = ["="],
+  ) -> Self {
+    Self(base: .upToNextOption, delimiters: delimiters)
   }
 
   /// Parse all remaining arguments into an array.
@@ -294,11 +385,20 @@ public struct ArrayParsingStrategy: Hashable {
   /// ```
   /// would parse the input `--title Foo -- Bar --baz` such that the `remainder`
   /// would hold the value `["Bar", "--baz"]`.
-  public static var remaining: ArrayParsingStrategy {
-    self.init(base: .allRemainingInput)
+  public static var remaining: Self {
+    remaining()
+  }
+
+  public static func remaining(delimiters: Character...) -> Self {
+    remaining(delimiters: .init(delimiters))
+  }
+
+  public static func remaining(delimiters: Set<Character> = ["="]) -> Self {
+    Self(base: .allRemainingInput, delimiters: delimiters)
   }
 }
 
+extension ArrayParsingStrategy: Hashable {}
 extension ArrayParsingStrategy: Sendable {}
 
 // MARK: - @Option T: ExpressibleByArgument Initializers

@@ -390,24 +390,6 @@ struct LenientParser {
         throw errorForMissingValue(originElement, parsed)
       }
 
-    case .attached:
-      // Only use an attached value, never the next element:
-      if let value = parsed.value {
-        // This was `--foo=bar` style:
-        try update(origin, parsed.name, value, &result)
-        usedOrigins.formUnion(origin)
-      } else if argument.allowsJoinedValue,
-        let (origin2, value) = inputArguments.extractJoinedElement(
-          at: originElement)
-      {
-        // Found a joined argument
-        let origins = origin.inserting(origin2)
-        try update(origins, parsed.name, String(value), &result)
-        usedOrigins.formUnion(origins)
-      } else {
-        throw errorForMissingValue(originElement, parsed)
-      }
-
     case .allRemainingInput:
       // Reset initial value with the found input origins:
       try argument.initial(origin, &result)
@@ -486,6 +468,24 @@ struct LenientParser {
     case .postTerminator, .allUnrecognized:
       // These parsing kinds are for arguments only.
       throw ParserError.invalidState
+
+    case .attached:
+      // Only use an attached value, never the next element:
+      if let value = parsed.value {
+        // This was `--foo=bar` style:
+        try update(origin, parsed.name, value, &result)
+        usedOrigins.formUnion(origin)
+      } else if argument.allowsJoinedValue,
+        let (origin2, value) = inputArguments.extractJoinedElement(
+          at: originElement)
+      {
+        // Found a joined argument
+        let origins = origin.inserting(origin2)
+        try update(origins, parsed.name, String(value), &result)
+        usedOrigins.formUnion(origins)
+      } else {
+        throw errorForMissingValue(originElement, parsed)
+      }
     }
   }
 
