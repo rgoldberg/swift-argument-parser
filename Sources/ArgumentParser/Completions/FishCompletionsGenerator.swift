@@ -186,8 +186,8 @@ extension CommandInfoV0 {
         ]
       }
     }
-    let r = arg.kind == .positional ? "" : "r"
     if arg.kindForCompletion != .flag {
+      let r = arg.kind == .positional ? "" : "r"
       let completions =
         switch arg.completionKind {
         case .none:
