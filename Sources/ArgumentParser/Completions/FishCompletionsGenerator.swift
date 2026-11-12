@@ -189,52 +189,50 @@ extension CommandInfoV0 {
     let r = arg.kind == .positional ? "" : "r"
     if arg.kindForCompletion != .flag {
       let completions =
-        if let completionKind = arg.completionKind {
-          switch completionKind {
-          case .list(let list):
-            """
-            -\(r)fka '\(
-              list
-              .map { "\\'\($0.fishEscapeForSingleQuotedString(iterationCount: 2))\\'" }
-              .joined(separator: separator)
-            )'
-            """
-          case .file(let extensions):
-            switch extensions.count {
-            case 0:
-              "-\(r)F"
-            case 1:
-              """
-              -\(r)fa '(\
-              for p in (string match -e -- \\'*/\\' (commandline -t);or printf \\n)*.\\'\(extensions.map { $0.fishEscapeForSingleQuotedString(iterationCount: 2) }.joined())\\';printf %s\\n $p;end;\
-              __fish_complete_directories (commandline -t) \\'\\'\
-              )'
-              """
-            default:
-              """
-              -\(r)fa '(\
-              set -l exts \(extensions.map { "\\'\($0.fishEscapeForSingleQuotedString(iterationCount: 2))\\'" }.joined(separator: separator));\
-              for p in (string match -e -- \\'*/\\' (commandline -t);or printf \\n)*.{$exts};printf %s\\n $p;end;\
-              __fish_complete_directories (commandline -t) \\'\\'\
-              )'
-              """
-            }
-          case .directory:
-            "-\(r)fa '(\(completeDirectoriesFunctionName))'"
-          case .shellCommand(let shellCommand):
-            "-\(r)fka '(\(shellCommand.fishEscapeForSingleQuotedString()))'"
-          case .custom, .customAsync:
-            """
-            -\(r)fka '(\
-            \(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)) \
-            (count (\(tokensFunctionName) -pc)) (\(tokensFunctionName) -tC)\
-            )'
-            """
-          case .customDeprecated:
-            "-\(r)fka '(\(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)))'"
-          }
-        } else {
+        switch arg.completionKind {
+        case .none:
           "-\(r)fka ''"
+        case .list(let list):
+          """
+          -\(r)fka '\(
+            list
+            .map { "\\'\($0.fishEscapeForSingleQuotedString(iterationCount: 2))\\'" }
+            .joined(separator: separator)
+          )'
+          """
+        case .file(let extensions):
+          switch extensions.count {
+          case 0:
+            "-\(r)F"
+          case 1:
+            """
+            -\(r)fa '(\
+            for p in (string match -e -- \\'*/\\' (commandline -t);or printf \\n)*.\\'\(extensions.map { $0.fishEscapeForSingleQuotedString(iterationCount: 2) }.joined())\\';printf %s\\n $p;end;\
+            __fish_complete_directories (commandline -t) \\'\\'\
+            )'
+            """
+          default:
+            """
+            -\(r)fa '(\
+            set -l exts \(extensions.map { "\\'\($0.fishEscapeForSingleQuotedString(iterationCount: 2))\\'" }.joined(separator: separator));\
+            for p in (string match -e -- \\'*/\\' (commandline -t);or printf \\n)*.{$exts};printf %s\\n $p;end;\
+            __fish_complete_directories (commandline -t) \\'\\'\
+            )'
+            """
+          }
+        case .directory:
+          "-\(r)fa '(\(completeDirectoriesFunctionName))'"
+        case .shellCommand(let shellCommand):
+          "-\(r)fka '(\(shellCommand.fishEscapeForSingleQuotedString()))'"
+        case .custom, .customAsync:
+          """
+          -\(r)fka '(\
+          \(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)) \
+          (count (\(tokensFunctionName) -pc)) (\(tokensFunctionName) -tC)\
+          )'
+          """
+        case .customDeprecated:
+          "-\(r)fka '(\(customCompletionFunctionName) \(arg.commonCustomCompletionCall(command: self)))'"
         }
       results.append(completions)
     }
