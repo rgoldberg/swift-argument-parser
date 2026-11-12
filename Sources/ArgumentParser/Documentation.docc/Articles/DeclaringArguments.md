@@ -413,7 +413,7 @@ This works with parsing strategies `.next` and `.scanningForValue`.  The `.uncon
 
 #### Accepting only an attached value
 
-Both `.next` and `.scanningForValue` can consume a following argument, so a `defaultAsFlag` option placed before a positional argument takes that argument as its value. The `.attached` parsing strategy instead accepts a value only when it is attached to the option, following the convention for optional arguments of GNU `getopt_long`:
+An option placed before a positional argument takes that argument as its value. The `.attached` parsing strategy instead accepts a value only when it is attached to the option, following the convention for optional arguments of GNU `getopt_long`:
 
 ```swift
 struct Show: ParsableCommand {
