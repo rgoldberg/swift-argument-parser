@@ -96,15 +96,14 @@ extension CommandInfoV0 {
           """
       }
 
-      switch arg.kindForCompletion {
-      case .option, .positional:
+      if arg.kindForCompletion == .flag {
+        return ("'\(line)'", nil)
+      } else {
         let (argumentAction, setupScript) = argumentActionAndSetupScript(arg)
         return (
           "'\(line):\(arg.valueName?.zshEscapeForSingleQuotedOptionSpec() ?? ""):\(argumentAction)'",
           setupScript
         )
-      case .flag:
-        return ("'\(line)'", nil)
       }
     }
     var argumentSpecs = argumentSpecsAndSetupScripts.map(\.argumentSpec)
