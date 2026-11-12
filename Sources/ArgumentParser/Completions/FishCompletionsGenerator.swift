@@ -187,10 +187,11 @@ extension CommandInfoV0 {
       }
     }
     let r = arg.kind == .positional ? "" : "r"
+    let kindForCompletion = arg.kindForCompletion
     let completions =
-      switch arg.kindForCompletion == .flag ? nil : arg.completionKind {
+      switch kindForCompletion == .flag ? nil : arg.completionKind {
       case .none:
-        switch arg.kindForCompletion {
+        switch kindForCompletion {
         case .positional,
           .option:
           "-\(r)fka ''"

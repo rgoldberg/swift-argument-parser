@@ -241,7 +241,7 @@ extension CommandInfoV0 {
 }
 
 extension ArgumentInfoV0 {
-  /// The kind of argument to complete this argument as.
+  /// The argument kind used when completing this argument.
   ///
   /// An option whose value must be attached to it (e.g., `--foo=bar`) never
   /// takes the next word as its value, so it is completed as a flag.
