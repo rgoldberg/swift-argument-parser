@@ -298,96 +298,88 @@ struct LenientParser {
     _ result: inout ParsedValues,
     _ usedOrigins: inout InputOrigin
   ) throws {
+    enum ValueLocation {
+      case attached, joined, separated
+    }
     let origin = InputOrigin(elements: [originElement])
-    switch argument.parsingStrategy {
-    case .default:
-      // We need a value for this option.
+    func parseAttachedValue() throws -> ValueLocation {
       if let value = parsed.value {
         // This was `--foo=bar` style:
         try update(origin, parsed.name, value, &result)
         usedOrigins.formUnion(origin)
+        return .attached
       } else if argument.allowsJoinedValue,
-        let (origin2, value) = inputArguments.extractJoinedElement(
-          at: originElement)
+        let (origin2, value) =
+          inputArguments.extractJoinedElement(at: originElement)
       {
         // Found a joined argument
         let origins = origin.inserting(origin2)
         try update(origins, parsed.name, String(value), &result)
         usedOrigins.formUnion(origins)
-      } else if let (origin2, value) = inputArguments.popNextElementIfValue(
-        after: originElement)
-      {
-        // Use `popNextElementIfValue(after:)` to handle cases where short option
-        // labels are combined
-        let origins = origin.inserting(origin2)
-        try update(origins, parsed.name, value, &result)
-        usedOrigins.formUnion(origins)
-      } else {
-        throw errorForMissingValue(originElement, parsed)
+        return .joined
+      }
+      return .separated
+    }
+
+    switch argument.parsingStrategy {
+    case .default:
+      // We need a value for this option.
+      if try parseAttachedValue() == .separated {
+        if let (origin2, value) =
+          inputArguments.popNextElementIfValue(after: originElement)
+        {
+          // Use `popNextElementIfValue(after:)` to handle cases where short option
+          // labels are combined
+          let origins = origin.inserting(origin2)
+          try update(origins, parsed.name, value, &result)
+          usedOrigins.formUnion(origins)
+        } else {
+          throw errorForMissingValue(originElement, parsed)
+        }
       }
 
     case .scanningForValue:
       // We need a value for this option.
-      if let value = parsed.value {
-        // This was `--foo=bar` style:
-        try update(origin, parsed.name, value, &result)
-        usedOrigins.formUnion(origin)
-      } else if argument.allowsJoinedValue,
-        let (origin2, value) = inputArguments.extractJoinedElement(
-          at: originElement)
-      {
-        // Found a joined argument
-        let origins = origin.inserting(origin2)
-        try update(origins, parsed.name, String(value), &result)
-        usedOrigins.formUnion(origins)
-      } else if let (origin2, value) = inputArguments.popNextValue(
-        after: originElement)
-      {
-        // Use `popNext(after:)` to handle cases where short option
-        // labels are combined
-        let origins = origin.inserting(origin2)
-        try update(origins, parsed.name, value, &result)
-        usedOrigins.formUnion(origins)
-      } else if let (_, element) = inputArguments.peekNext(),
-        !element.isTerminator,
-        case .option(let nextParsed) = element.value,
-        argumentSet.first(matching: nextParsed) == nil,
-        nextParsed.value != nil,
-        let (actualOrigin, value) = inputArguments.popNextElementAsValue(
-          after: originElement)
-      {
-        // For default-as-flag options with scanningForValue, try consuming option-like
-        // strings as values only if they are unrecognized options with explicit values (e.g., "--somearg=value")
-        let origins = origin.inserting(actualOrigin)
-        try update(origins, parsed.name, value, &result)
-        usedOrigins.formUnion(origins)
-      } else {
-        throw errorForMissingValue(originElement, parsed)
+      if try parseAttachedValue() == .separated {
+        if let (origin2, value) =
+          inputArguments.popNextValue(after: originElement)
+        {
+          // Use `popNext(after:)` to handle cases where short option
+          // labels are combined
+          let origins = origin.inserting(origin2)
+          try update(origins, parsed.name, value, &result)
+          usedOrigins.formUnion(origins)
+        } else if let (_, element) = inputArguments.peekNext(),
+          !element.isTerminator,
+          case .option(let nextParsed) = element.value,
+          argumentSet.first(matching: nextParsed) == nil,
+          nextParsed.value != nil,
+          let (actualOrigin, value) =
+            inputArguments.popNextElementAsValue(after: originElement)
+        {
+          // For default-as-flag options with scanningForValue, try consuming option-like
+          // strings as values only if they are unrecognized options with explicit values (e.g., "--somearg=value")
+          let origins = origin.inserting(actualOrigin)
+          try update(origins, parsed.name, value, &result)
+          usedOrigins.formUnion(origins)
+        } else {
+          throw errorForMissingValue(originElement, parsed)
+        }
       }
 
     case .unconditional:
       // Use an attached value if it exists...
-      if let value = parsed.value {
-        // This was `--foo=bar` style:
-        try update(origin, parsed.name, value, &result)
-        usedOrigins.formUnion(origin)
-      } else if argument.allowsJoinedValue,
-        let (origin2, value) = inputArguments.extractJoinedElement(
-          at: originElement)
-      {
-        // Found a joined argument
-        let origins = origin.inserting(origin2)
-        try update(origins, parsed.name, String(value), &result)
-        usedOrigins.formUnion(origins)
-      } else if let (origin2, value) = inputArguments.popNextElementAsValue(
-        after: originElement)
-      {
-        // Only consume if there's no terminator between option and value
-        let origins = origin.inserting(origin2)
-        try update(origins, parsed.name, value, &result)
-        usedOrigins.formUnion(origins)
-      } else {
-        throw errorForMissingValue(originElement, parsed)
+      if try parseAttachedValue() == .separated {
+        if let (origin2, value) =
+          inputArguments.popNextElementAsValue(after: originElement)
+        {
+          // Only consume if there's no terminator between option and value
+          let origins = origin.inserting(origin2)
+          try update(origins, parsed.name, value, &result)
+          usedOrigins.formUnion(origins)
+        } else {
+          throw errorForMissingValue(originElement, parsed)
+        }
       }
 
     case .allRemainingInput:
@@ -395,24 +387,13 @@ struct LenientParser {
       try argument.initial(origin, &result)
 
       // Use an attached value if it exists...
-      if let value = parsed.value {
-        // This was `--foo=bar` style:
-        try update(origin, parsed.name, value, &result)
-        usedOrigins.formUnion(origin)
-      } else if argument.allowsJoinedValue,
-        let (origin2, value) = inputArguments.extractJoinedElement(
-          at: originElement)
-      {
-        // Found a joined argument
-        let origins = origin.inserting(origin2)
-        try update(origins, parsed.name, String(value), &result)
-        usedOrigins.formUnion(origins)
+      if try parseAttachedValue() == .joined {
         inputArguments.removeAll(in: usedOrigins)
       }
 
       // ...and then consume the rest of the arguments
-      while let (origin2, value) = inputArguments.popNextElementAsValue(
-        after: originElement)
+      while let (origin2, value) =
+        inputArguments.popNextElementAsValue(after: originElement)
       {
         let origins = origin.inserting(origin2)
         try update(origins, parsed.name, value, &result)
@@ -421,22 +402,9 @@ struct LenientParser {
 
     case .upToNextOption:
       // Use an attached value if it exists...
-      var foundAttachedValue = false
-      if let value = parsed.value {
-        // This was `--foo=bar` style:
-        try update(origin, parsed.name, value, &result)
-        usedOrigins.formUnion(origin)
-        foundAttachedValue = true
-      } else if argument.allowsJoinedValue,
-        let (origin2, value) = inputArguments.extractJoinedElement(
-          at: originElement)
-      {
-        // Found a joined argument
-        let origins = origin.inserting(origin2)
-        try update(origins, parsed.name, String(value), &result)
-        usedOrigins.formUnion(origins)
+      let valueLocation = try parseAttachedValue()
+      if valueLocation == .joined {
         inputArguments.removeAll(in: usedOrigins)
-        foundAttachedValue = true
       }
 
       // Clear out the initial origin first, since it can include
@@ -446,23 +414,17 @@ struct LenientParser {
 
       // Fix incorrect error message
       // for @Option array without values (see issue #434).
-      guard let first = inputArguments.elements.first,
-        first.isValue
-      else {
-        // No independent values to be found, which is an error if there was
-        // no `--foo=bar`-style value already found.
-        if foundAttachedValue {
-          break
-        } else {
-          throw errorForMissingValue(originElement, parsed)
+      if inputArguments.elements.first?.isValue == true {
+        // ...and then consume the arguments until hitting an option
+        while let (origin2, value) = inputArguments.popNextElementIfValue() {
+          let origins = origin.inserting(origin2)
+          try update(origins, parsed.name, value, &result)
+          usedOrigins.formUnion(origins)
         }
-      }
-
-      // ...and then consume the arguments until hitting an option
-      while let (origin2, value) = inputArguments.popNextElementIfValue() {
-        let origins = origin.inserting(origin2)
-        try update(origins, parsed.name, value, &result)
-        usedOrigins.formUnion(origins)
+      } else if valueLocation == .separated {
+        // No separated values to be found, which is an error if there was
+        // no `--foo=bar`-style value already found.
+        throw errorForMissingValue(originElement, parsed)
       }
 
     case .postTerminator, .allUnrecognized:
@@ -471,19 +433,7 @@ struct LenientParser {
 
     case .attached:
       // Only use an attached value, never the next element:
-      if let value = parsed.value {
-        // This was `--foo=bar` style:
-        try update(origin, parsed.name, value, &result)
-        usedOrigins.formUnion(origin)
-      } else if argument.allowsJoinedValue,
-        let (origin2, value) = inputArguments.extractJoinedElement(
-          at: originElement)
-      {
-        // Found a joined argument
-        let origins = origin.inserting(origin2)
-        try update(origins, parsed.name, String(value), &result)
-        usedOrigins.formUnion(origins)
-      } else {
+      if try parseAttachedValue() == .separated {
         throw errorForMissingValue(originElement, parsed)
       }
     }
