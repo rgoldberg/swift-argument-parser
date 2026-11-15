@@ -50,13 +50,27 @@ extension ArgumentInfoV0 {
     return MDocMacro.CommandArgument(arguments: [valueName])
   }
 
-  // ArgumentInfoV0 value name as MDoc following an option name, bracketed if
-  // the value is optional.
+  // ArgumentInfoV0 value name as MDoc following an option name: delimited
+  // from the name by `=` if the option forbids separated values; otherwise,
+  // separated from the name. Bracketed if the value is optional.
   var manualPageOptionValueName: MDocASTNode {
-    defaultAsFlagValue == nil
-      ? manualPageValueName
-      : MDocMacro.OptionalCommandLineComponent(
-        arguments: [manualPageValueName])
+    let isValueOptional = defaultAsFlagValue != nil
+    guard parsingStrategy == .attached else {
+      return isValueOptional
+        ? MDocMacro.OptionalCommandLineComponent(
+          arguments: [manualPageValueName])
+        : manualPageValueName
+    }
+    var delimitedValueName = MDocMacro.WithoutLeadingSpace(text: "")
+    delimitedValueName.arguments = [manualPageValueName]
+    let delimitedValue = MDocMacro.WithoutLeadingSpace(text: "=")
+      .withUnsafeChildren(nodes: [delimitedValueName])
+    guard isValueOptional else { return delimitedValue }
+    var optionalValue = MDocMacro.WithoutLeadingSpace(text: "")
+    optionalValue.arguments = [
+      MDocMacro.OptionalCommandLineComponent(arguments: [delimitedValue])
+    ]
+    return optionalValue
   }
 
   // ArgumentDefinition formatted as MDoc for use in a description section.

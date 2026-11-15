@@ -7,7 +7,8 @@ A utility demonstrating defaultAsFlag options.
 ```
 default-as-flag [--string-flag[=<string-flag>]]
   [--number-flag[=<number-flag>]] [--bool-flag[=<bool-flag>]]
-  [--transform-flag[=<transform-flag>]] [--regular=<regular>]
+  [--transform-flag[=<transform-flag>]] [--format[=<format>]]
+  [--level=<level>] [--regular=<regular>]
   [<additional-args>...] [--help]
 ```
 
@@ -32,6 +33,16 @@ and as options with values.
 - term **--transform-flag[=\<transform-flag\>]**:
 
 *A string option with transform and defaultAsFlag.*
+
+
+- term **--format[=\<format\>]**:
+
+*An attached-only string option with defaultAsFlag.*
+
+
+- term **--level=\<level\>**:
+
+*An attached-only integer option.*
 
 
 - term **--regular=\<regular\>**:

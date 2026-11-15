@@ -37,6 +37,16 @@ struct DefaultAsFlag: ParsableCommand {
   )
   var transformFlag: String?
 
+  @Option(
+    defaultAsFlag: "json", parsing: .attached,
+    help: "An attached-only string option with defaultAsFlag.")
+  var format: String?
+
+  @Option(
+    parsing: .attached,
+    help: "An attached-only integer option.")
+  var level: Int?
+
   @Option(name: .shortAndLong, help: "A regular option for comparison.")
   var regular: String?
 
@@ -48,6 +58,8 @@ struct DefaultAsFlag: ParsableCommand {
     print("Number flag: \(numberFlag?.description ?? "nil")")
     print("Bool flag: \(boolFlag?.description ?? "nil")")
     print("Transform flag: \(transformFlag?.description ?? "nil")")
+    print("Format: \(format?.description ?? "nil")")
+    print("Level: \(level?.description ?? "nil")")
     print("Regular option: \(regular?.description ?? "nil")")
     print("Additional args: \(additionalArgs)")
   }

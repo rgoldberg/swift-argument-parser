@@ -12,6 +12,8 @@
 .Op Fl -number-flag Op Ar number-flag
 .Op Fl -bool-flag Op Ar bool-flag
 .Op Fl -transform-flag Op Ar transform-flag
+.Op Fl -format Ns Op Ns = Ns Ar format
+.Op Fl -level Ns = Ns Ar level
 .Op Fl -regular Ar regular
 .Op Ar additional-args...
 .Op Fl -help
@@ -27,6 +29,10 @@ An integer option with defaultAsFlag.
 A boolean option with defaultAsFlag.
 .It Fl -transform-flag Op Ar transform-flag
 A string option with transform and defaultAsFlag.
+.It Fl -format Ns Op Ns = Ns Ar format
+An attached-only string option with defaultAsFlag.
+.It Fl -level Ns = Ns Ar level
+An attached-only integer option.
 .It Fl r , -regular Ar regular
 A regular option for comparison.
 .It Ar additional-args...
