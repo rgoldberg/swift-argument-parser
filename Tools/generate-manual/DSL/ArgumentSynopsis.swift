@@ -35,7 +35,7 @@ struct ArgumentSynopsis: MDocComponent {
       // preferredName cannot be nil
       let name = argument.preferredName!
       return MDocMacro.CommandOption(options: [name.manualPage])
-        .withUnsafeChildren(nodes: [argument.manualPageValueName])
+        .withUnsafeChildren(nodes: [argument.manualPageOptionValueName])
     case .flag:
       // swift-format-ignore: NeverForceUnwrap
       // preferredName cannot be nil

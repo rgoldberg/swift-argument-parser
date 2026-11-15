@@ -50,6 +50,15 @@ extension ArgumentInfoV0 {
     return MDocMacro.CommandArgument(arguments: [valueName])
   }
 
+  // ArgumentInfoV0 value name as MDoc following an option name, bracketed if
+  // the value is optional.
+  var manualPageOptionValueName: MDocASTNode {
+    defaultAsFlagValue == nil
+      ? manualPageValueName
+      : MDocMacro.OptionalCommandLineComponent(
+        arguments: [manualPageValueName])
+  }
+
   // ArgumentDefinition formatted as MDoc for use in a description section.
   var manualPageDescription: MDocASTNode {
     // names.partitioned.map(\.manualPage).interspersed(with: ",")
@@ -62,7 +71,7 @@ extension ArgumentInfoV0 {
       return manualPageValueName
     case .option:
       return MDocMacro.CommandOption(options: synopses)
-        .withUnsafeChildren(nodes: [manualPageValueName])
+        .withUnsafeChildren(nodes: [manualPageOptionValueName])
     case .flag:
       return MDocMacro.CommandOption(options: synopses)
     }

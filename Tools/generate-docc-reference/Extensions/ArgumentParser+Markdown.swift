@@ -168,7 +168,9 @@ extension ArgumentInfoV0 {
     case .positional:
       inner = "<\(names.joined(separator: "|"))>"
     case .option:
-      inner = "--\(names.joined(separator: "|"))=<\(self.valueName ?? "")>"
+      let value = "=<\(self.valueName ?? "")>"
+      inner =
+        "--\(names.joined(separator: "|"))\(self.defaultAsFlagValue == nil ? value : "[\(value)]")"
     case .flag:
       inner = "--\(names.joined(separator: "|"))"
     }
@@ -203,7 +205,9 @@ extension ArgumentInfoV0 {
     case .positional:
       inner = "\(names.joined(separator: "|"))"
     case .option:
-      inner = "--\(names.joined(separator: "|"))=\\<\(self.valueName ?? "")\\>"
+      let value = "=\\<\(self.valueName ?? "")\\>"
+      inner =
+        "--\(names.joined(separator: "|"))\(self.defaultAsFlagValue == nil ? value : "[\(value)]")"
     case .flag:
       inner = "--\(names.joined(separator: "|"))"
     }

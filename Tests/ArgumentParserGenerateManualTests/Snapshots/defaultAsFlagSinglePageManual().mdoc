@@ -8,10 +8,10 @@
 .Sh SYNOPSIS
 .Nm
 .Ar subcommand
-.Op Fl -string-flag Ar string-flag
-.Op Fl -number-flag Ar number-flag
-.Op Fl -bool-flag Ar bool-flag
-.Op Fl -transform-flag Ar transform-flag
+.Op Fl -string-flag Op Ar string-flag
+.Op Fl -number-flag Op Ar number-flag
+.Op Fl -bool-flag Op Ar bool-flag
+.Op Fl -transform-flag Op Ar transform-flag
 .Op Fl -regular Ar regular
 .Op Ar additional-args...
 .Op Fl -help
@@ -19,13 +19,13 @@
 This command shows how defaultAsFlag options can work both as flags
 and as options with values.
 .Bl -tag -width 6n
-.It Fl -string-flag Ar string-flag
+.It Fl -string-flag Op Ar string-flag
 A string option with defaultAsFlag.
-.It Fl -number-flag Ar number-flag
+.It Fl -number-flag Op Ar number-flag
 An integer option with defaultAsFlag.
-.It Fl -bool-flag Ar bool-flag
+.It Fl -bool-flag Op Ar bool-flag
 A boolean option with defaultAsFlag.
-.It Fl -transform-flag Ar transform-flag
+.It Fl -transform-flag Op Ar transform-flag
 A string option with transform and defaultAsFlag.
 .It Fl r , -regular Ar regular
 A regular option for comparison.

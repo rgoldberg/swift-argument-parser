@@ -12,6 +12,7 @@ Add new items at the end of the relevant section under **Unreleased**.
 - The `--experimental-dump-help` output now includes an option's `defaultAsFlagValue`, and whether a value can be joined to each of its names (`allowsJoinedValue`).
 - Bash completion scripts now complete an option value that follows `=` (e.g., `--option=val`) or that is joined to a name that allows it (e.g., `-oval`).
 - Zsh completion scripts now complete an option value that follows `=` after a multi-character name (e.g., `--option=val`) or that is joined to a name that allows it (e.g., `-oval`).
+- The `generate-manual` and `generate-docc-reference` plugins now show that the value of a `defaultAsFlag` option is optional (e.g., `--option [value]` in a manual and `--option[=<value>]` in a DocC reference).
 
 ### Fixes
 
