@@ -48,6 +48,7 @@ extension CommandInfoV0 {
     # - non_repeating_flags: the non-repeating flags that the current (sub)command can accept
     # - repeating_options: the repeating options that the current (sub)command can accept
     # - non_repeating_options: the non-repeating options that the current (sub)command can accept
+    # - delimited_value_options: the flags that are options that require a value delimited from them by =
     # - positional_number: value ignored
     # - unparsed_words: unparsed words from the current command line
     #
@@ -148,6 +149,18 @@ extension CommandInfoV0 {
             && [[ ("${cur}" = -* && "${positional_number}" -ge 0) || "${positional_number}" -eq -1 ]]
         then
             COMPREPLY+=($(compgen -W "${repeating_flags[*]} ${non_repeating_flags[*]} ${repeating_options[*]} ${non_repeating_options[*]}" -- "${cur}"))
+
+            # If the only completion is an option that requires a delimited value, follow it by = instead of by a space
+            if [[ "${#COMPREPLY[@]}" -eq 1 ]]; then
+                local option
+                for option in "${delimited_value_options[@]}"; do
+                    if [[ "${COMPREPLY[0]}" = "${option}" ]]; then
+                        # bash 3 can't omit the space; +o filenames prevents = from being escaped
+                        compopt -o nospace +o filenames 2> /dev/null && COMPREPLY[0]+='='
+                        break
+                    fi
+                done
+            fi
         fi
     }
 
@@ -261,8 +274,14 @@ extension CommandInfoV0 {
 
     let arguments = arguments ?? []
 
-    let flags = arguments.filter { $0.kind == .flag }
-    let options = arguments.filter { $0.kind == .option }
+    // An option that forbids separated values never consumes the next word,
+    // so it is offered like a flag.
+    let flags = arguments.filter {
+      $0.kind == .flag || $0.forbidsSeparatedValues
+    }
+    let options = arguments.filter {
+      $0.kind == .option && !$0.forbidsSeparatedValues
+    }
     if !flags.flatMap(\.completionWords).isEmpty
       || !options.flatMap(\.completionWords).isEmpty
     {
@@ -271,6 +290,7 @@ extension CommandInfoV0 {
             \(declareTopLevelArray)non_repeating_flags=(\(flags.filter { !$0.isRepeating }.flatMap(\.completionWords).joined(separator: " ")))
             \(declareTopLevelArray)repeating_options=(\(options.filter(\.isRepeating).flatMap(\.completionWords).joined(separator: " ")))
             \(declareTopLevelArray)non_repeating_options=(\(options.filter { !$0.isRepeating }.flatMap(\.completionWords).joined(separator: " ")))
+            \(declareTopLevelArray)delimited_value_options=(\(flags.flatMap(\.delimitedValueCompletionWords).joined(separator: " ")))
             \(offerFlagsOptionsFunctionName) \
         \(positionalArguments.contains { $0.isRepeating } ? -1 : positionalArguments.count)
 
@@ -279,12 +299,28 @@ extension CommandInfoV0 {
 
     // Generate the case pattern-matching statements for option values.
     // If there aren't any, skip the case block altogether.
+    // An option that forbids separated values only offers value completions
+    // for a value attached to it.
     let optionHandlers =
-      options.compactMap { arg in
+      arguments.compactMap { arg in
+        guard arg.kind == .option else { return nil }
         let words = arg.completionWords
         guard !words.isEmpty else { return nil }
-        return """
-              \(words.map { "'\($0.shellEscapeForSingleQuotedString())'" }.joined(separator: "|")))
+        let pattern =
+          words
+          .map { "'\($0.shellEscapeForSingleQuotedString())'" }
+          .joined(separator: "|")
+        return arg.forbidsSeparatedValues
+          ? """
+              \(pattern))
+                  if "${is_attached_value}"; then
+          \(valueCompletion(arg).indentingEachLine(by: 12))\
+                      return
+                  fi
+                  ;;
+          """
+          : """
+              \(pattern))
           \(valueCompletion(arg).indentingEachLine(by: 8))\
                   return
                   ;;
@@ -467,6 +503,16 @@ extension CommandInfoV0 {
 }
 
 extension ArgumentInfoV0 {
+  /// The names of this argument that must be followed by `=` & a value, if
+  /// this argument is an option that requires an attached value.
+  fileprivate var delimitedValueCompletionWords: [String] {
+    shouldDisplay && requiresAttachedValue
+      ? (names ?? [])
+        .filter { $0.allowsJoinedValue != true }
+        .map { $0.commonCompletionSynopsisString() }
+      : []
+  }
+
   /// The names of this argument that a value can be joined to, if this
   /// argument is an option.
   fileprivate var joinedValueCompletionWords: [String] {

@@ -1,0 +1,304 @@
+#!/bin/bash
+
+__attachedvalue-test_cursor_index_in_current_word() {
+    local remaining="${COMP_LINE}"
+
+    local word
+    for word in "${COMP_WORDS[@]::COMP_CWORD}"; do
+        remaining="${remaining##*([[:space:]])"${word}"*([[:space:]])}"
+    done
+
+    local -ir index="$((COMP_POINT - ${#COMP_LINE} + ${#remaining}))"
+    if [[ "${index}" -le 0 ]]; then
+        printf 0
+    else
+        printf %s "${index}"
+    fi
+}
+
+# positional arguments:
+#
+# - 1: the current (sub)command's count of positional arguments
+#
+# required variables:
+#
+# - repeating_flags: the repeating flags that the current (sub)command can accept
+# - non_repeating_flags: the non-repeating flags that the current (sub)command can accept
+# - repeating_options: the repeating options that the current (sub)command can accept
+# - non_repeating_options: the non-repeating options that the current (sub)command can accept
+# - delimited_value_options: the flags that are options that require a value delimited from them by =
+# - positional_number: value ignored
+# - unparsed_words: unparsed words from the current command line
+#
+# modified variables:
+#
+# - non_repeating_flags: remove flags for this (sub)command that are already on the command line
+# - non_repeating_options: remove options for this (sub)command that are already on the command line
+# - positional_number: set to the current positional number
+# - unparsed_words: remove all flags, options, and option values for this (sub)command
+__attachedvalue-test_offer_flags_options() {
+    local -ir positional_count="${1}"
+    positional_number=0
+
+    local was_flag_option_terminator_seen=false
+    local is_parsing_option_value=false
+
+    local -ar unparsed_word_indices=("${!unparsed_words[@]}")
+    local -i word_index
+    for word_index in "${unparsed_word_indices[@]}"; do
+        if "${is_parsing_option_value}"; then
+            # This word is an option value:
+            # Reset marker for next word iff not currently the last word
+            [[ "${word_index}" -ne "${unparsed_word_indices[${#unparsed_word_indices[@]} - 1]}" ]] && is_parsing_option_value=false
+            unset "unparsed_words[${word_index}]"
+            # Do not process this word as a flag or an option
+            continue
+        fi
+
+        local word="${unparsed_words["${word_index}"]}"
+        if ! "${was_flag_option_terminator_seen}"; then
+            case "${word}" in
+            --)
+                unset "unparsed_words[${word_index}]"
+                # by itself -- is a flag/option terminator, but if it is the last word, it is the start of a completion
+                if [[ "${word_index}" -ne "${unparsed_word_indices[${#unparsed_word_indices[@]} - 1]}" ]]; then
+                    was_flag_option_terminator_seen=true
+                fi
+                continue
+                ;;
+            -*)
+                # ${word} is a flag or an option
+                # If ${word} is an option, mark that the next word to be parsed is an option value
+                local option
+                for option in "${repeating_options[@]}" "${non_repeating_options[@]}"; do
+                    [[ "${word}" = "${option}" ]] && is_parsing_option_value=true && break
+                done
+
+                # Remove ${word}, without any value delimited from it by =, from ${non_repeating_flags}
+                # or ${non_repeating_options} so it isn't offered again
+                word="${word%%=*}"
+                local not_found=true
+                local -i index
+                for index in "${!non_repeating_flags[@]}"; do
+                    if [[ "${non_repeating_flags[${index}]}" = "${word}" ]]; then
+                        unset "non_repeating_flags[${index}]"
+                        non_repeating_flags=("${non_repeating_flags[@]}")
+                        not_found=false
+                        break
+                    fi
+                done
+                if "${not_found}"; then
+                    for index in "${!non_repeating_options[@]}"; do
+                        if [[ "${non_repeating_options[${index}]}" = "${word}" ]]; then
+                            unset "non_repeating_options[${index}]"
+                            non_repeating_options=("${non_repeating_options[@]}")
+                            break
+                        fi
+                    done
+                fi
+                unset "unparsed_words[${word_index}]"
+                continue
+                ;;
+            esac
+        fi
+
+        # ${word} is neither a flag, nor an option, nor an option value
+        if [[ "${positional_number}" -lt "${positional_count}" || "${positional_count}" -lt 0 ]]; then
+            # ${word} is a positional
+            ((positional_number++))
+            unset "unparsed_words[${word_index}]"
+        else
+            if [[ -z "${word}" ]]; then
+                # Could be completing a flag, option, or subcommand
+                positional_number=-1
+            else
+                # ${word} is a subcommand or invalid, so stop processing this (sub)command
+                positional_number=-2
+            fi
+            break
+        fi
+    done
+
+    unparsed_words=("${unparsed_words[@]}")
+
+    if\
+        ! "${was_flag_option_terminator_seen}"\
+        && ! "${is_parsing_option_value}"\
+        && [[ ("${cur}" = -* && "${positional_number}" -ge 0) || "${positional_number}" -eq -1 ]]
+    then
+        COMPREPLY+=($(compgen -W "${repeating_flags[*]} ${non_repeating_flags[*]} ${repeating_options[*]} ${non_repeating_options[*]}" -- "${cur}"))
+
+        # If the only completion is an option that requires a delimited value, follow it by = instead of by a space
+        if [[ "${#COMPREPLY[@]}" -eq 1 ]]; then
+            local option
+            for option in "${delimited_value_options[@]}"; do
+                if [[ "${COMPREPLY[0]}" = "${option}" ]]; then
+                    # bash 3 can't omit the space; +o filenames prevents = from being escaped
+                    compopt -o nospace +o filenames 2> /dev/null && COMPREPLY[0]+='='
+                    break
+                fi
+            done
+        fi
+    fi
+}
+
+__attachedvalue-test_add_completions() {
+    local completion
+    while IFS='' read -r completion; do
+        COMPREPLY+=("${cur_prefix}${completion}")
+    done < <(IFS=$'\n' compgen "${@}" -- "${cur}")
+}
+
+__attachedvalue-test_custom_complete() {
+    if [[ -n "${cur}" || -z ${COMP_WORDS[${COMP_CWORD}]} || "${COMP_LINE:${COMP_POINT}:1}" != ' ' ]]; then
+        local -ar words=("${COMP_WORDS[@]}")
+    else
+        local -ar words=("${COMP_WORDS[@]::${COMP_CWORD}}" '' "${COMP_WORDS[@]:${COMP_CWORD}}")
+    fi
+
+    "${COMP_WORDS[0]}" "${@}" "${words[@]}"
+}
+
+_attachedvalue-test() {
+    local state
+    state="$(shopt -p;shopt -po)"
+    trap "${state//$'\n'/;}" RETURN
+    shopt -s extglob
+    set +o history +o posix
+
+    local -xr SAP_SHELL=bash
+    local -x SAP_SHELL_VERSION
+    SAP_SHELL_VERSION="$(IFS='.';printf %s "${BASH_VERSINFO[*]}")"
+    local -r SAP_SHELL_VERSION
+
+    local cur="${2}"
+    local prev="${3}"
+
+    # The part of the current word before ${cur}, which must be prepended to each completion,
+    # if the shell replaces the entire current word instead of only ${cur}
+    local cur_prefix=''
+
+    # If ${cur} is a value delimited from an option by =, set ${prev} to that option
+    local is_attached_value=false
+    if [[ "${cur}" = -*=* ]]; then
+        # COMP_WORDBREAKS doesn't contain =, so ${cur} is the option, =, and the value
+        prev="${cur%%=*}"
+        cur_prefix="${prev}="
+        cur="${cur#*=}"
+        is_attached_value=true
+    elif [[ "${COMP_WORDS[COMP_CWORD]}" = '=' && "${prev}" = -* ]]; then
+        # bash 4+ split the option, =, and an empty value into separate words
+        is_attached_value=true
+    elif [[ "${prev}" = '=' && "${COMP_CWORD}" -ge 2 && "${COMP_WORDS[COMP_CWORD - 2]}" = -* ]]; then
+        # bash 4+ split the option, =, and a non-empty value into separate words
+        prev="${COMP_WORDS[COMP_CWORD - 2]}"
+        is_attached_value=true
+    elif [[ "${COMP_WORDS[COMP_CWORD]}" = -*=* && "${COMP_WORDS[COMP_CWORD]#*=}" = "${cur}" ]]; then
+        # bash 3 keeps the option, =, and the value in one word
+        prev="${COMP_WORDS[COMP_CWORD]%%=*}"
+        is_attached_value=true
+    fi
+    local -i positional_number
+
+    # Rejoin each option with any value delimited from it by =, which bash 4+ split into separate words
+    local -a unparsed_words=()
+    local -i comp_word_index
+    local -i last_index
+    for ((comp_word_index = 1; comp_word_index <= COMP_CWORD; comp_word_index++)); do
+        last_index="$((${#unparsed_words[@]} - 1))"
+        if [[\
+            "${COMP_WORDS[comp_word_index]}" = '='\
+            && "${last_index}" -ge 0\
+            && "${unparsed_words[last_index]}" = -*\
+            && "${unparsed_words[last_index]}" != --\
+            && "${unparsed_words[last_index]}" != *=*\
+        ]]; then
+            unparsed_words[last_index]+='='
+            if [[ "${comp_word_index}" -lt "${COMP_CWORD}" ]]; then
+                ((comp_word_index++))
+                unparsed_words[last_index]+="${COMP_WORDS[comp_word_index]}"
+            fi
+        else
+            unparsed_words+=("${COMP_WORDS[comp_word_index]}")
+        fi
+    done
+
+    local -a repeating_flags=(--tags -D)
+    local -a non_repeating_flags=(--level -l --format -h --help)
+    local -a repeating_options=()
+    local -a non_repeating_options=(-I --regular)
+    local -a delimited_value_options=(--level -l --tags)
+    __attachedvalue-test_offer_flags_options 1
+
+    # If ${cur} is a value joined to an option, set ${prev} to that option
+    if ! "${is_attached_value}"; then
+        case "${cur}" in
+        '-D'*|'-I'*)
+            prev="${cur:0:2}"
+            cur_prefix="${prev}"
+            cur="${cur:2}"
+            is_attached_value=true
+            ;;
+        esac
+    fi
+
+    # Offer option value completions
+    case "${prev}" in
+    '--level'|'-l')
+        if "${is_attached_value}"; then
+            __attachedvalue-test_add_completions -W 'DEBUG'$'\n''INFO'
+            return
+        fi
+        ;;
+    '--tags')
+        if "${is_attached_value}"; then
+            return
+        fi
+        ;;
+    '--format')
+        if "${is_attached_value}"; then
+            return
+        fi
+        ;;
+    '-D')
+        if "${is_attached_value}"; then
+            return
+        fi
+        ;;
+    '-I')
+        return
+        ;;
+    '--regular')
+        return
+        ;;
+    esac
+
+    # Offer positional completions
+    case "${positional_number}" in
+    1)
+        __attachedvalue-test_add_completions -f
+        return
+        ;;
+    esac
+
+    # Offer subcommand / subcommand argument completions
+    local -r subcommand="${unparsed_words[0]}"
+    unset 'unparsed_words[0]'
+    unparsed_words=("${unparsed_words[@]}")
+    case "${subcommand}" in
+    help)
+        # Offer subcommand argument completions
+        "_attachedvalue-test_${subcommand}"
+        ;;
+    *)
+        # Offer subcommand completions
+        COMPREPLY+=($(compgen -W 'help' -- "${cur}"))
+        ;;
+    esac
+}
+
+_attachedvalue-test_help() {
+    :
+}
+
+complete -o filenames -F _attachedvalue-test attachedvalue-test

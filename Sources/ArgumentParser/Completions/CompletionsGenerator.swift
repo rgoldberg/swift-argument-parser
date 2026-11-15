@@ -241,6 +241,18 @@ extension CommandInfoV0 {
 }
 
 extension ArgumentInfoV0 {
+  /// Whether this argument is an option that only accepts a value attached to
+  /// its name (e.g., `--foo=bar`), never one from a subsequent word.
+  var forbidsSeparatedValues: Bool {
+    kind == .option && parsingStrategy == .attached
+  }
+
+  /// Whether this argument is an option that must be followed by a value in
+  /// the same word, because it forbids separated values & requires a value.
+  var requiresAttachedValue: Bool {
+    forbidsSeparatedValues && defaultAsFlagValue == nil
+  }
+
   /// Returns a string with the arguments for the callback to generate custom
   /// completions for this argument.
   func commonCustomCompletionCall(command: CommandInfoV0) -> String {

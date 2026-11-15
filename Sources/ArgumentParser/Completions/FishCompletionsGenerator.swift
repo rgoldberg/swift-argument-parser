@@ -179,14 +179,24 @@ extension CommandInfoV0 {
   private func argumentSegments(_ arg: ArgumentInfoV0) -> [String] {
     var results: [String] = []
     if let names = arg.names, !names.isEmpty {
-      results += names.map(\.asCompleteArgument)
+      results += names.map {
+        $0.asCompleteArgument(
+          isDelimitedValueRequired: arg.forbidsSeparatedValues)
+      }
       if let abstract = arg.abstract, !abstract.isEmpty {
         results += [
           "-d '\(abstract.fishEscapeForSingleQuotedString())'"
         ]
       }
     }
-    let r = arg.kind == .positional ? "" : "r"
+    // `-r` makes the next token the value of an option, so it is omitted for
+    // an option that forbids separated values, unless a value can be joined
+    // to any of its names, which `-r` is also required for.
+    let isJoinedValueAllowed =
+      (arg.names ?? []).contains { $0.allowsJoinedValue == true }
+    let r =
+      arg.kind == .positional
+        || (arg.forbidsSeparatedValues && !isJoinedValueAllowed) ? "" : "r"
     let completions =
       switch arg.completionKind {
       case .none:
@@ -293,15 +303,32 @@ extension ArgumentInfoV0 {
   }
 
   private func optionSpecRequiresValue(_ optionSpec: String) -> String {
-    kind == .option ? "\(optionSpec)=\(isRepeating ? "+" : "")" : optionSpec
+    guard kind == .option else { return optionSpec }
+    // `=?` is an optional value that must be attached to the option, so that
+    // the next token is never consumed as the value.
+    return
+      "\(optionSpec)=\(forbidsSeparatedValues ? "?" : isRepeating ? "+" : "")"
   }
 }
 
 extension ArgumentInfoV0.NameInfoV0 {
-  fileprivate var asCompleteArgument: String {
+  /// Returns the `complete` argument for this name.
+  ///
+  /// - Parameter isDelimitedValueRequired: Whether the option that has this
+  ///   name forbids separated values, so that a value must be delimited from
+  ///   this name by `=`, unless it can be joined to it.
+  ///
+  /// - Returns: The `complete` argument.
+  fileprivate func asCompleteArgument(
+    isDelimitedValueRequired: Bool
+  ) -> String {
     switch kind {
     case .long:
       return "-l '\(name.fishEscapeForSingleQuotedString())'"
+    case .short where isDelimitedValueRequired && allowsJoinedValue != true:
+      // fish completes a value joined to a short option (e.g., `-fbar`), but
+      // a value delimited from an old-style option (e.g., `-f=bar`).
+      return "-o '\(name.fishEscapeForSingleQuotedString())'"
     case .short:
       return "-s '\(name.fishEscapeForSingleQuotedString())'"
     case .longWithSingleDash:

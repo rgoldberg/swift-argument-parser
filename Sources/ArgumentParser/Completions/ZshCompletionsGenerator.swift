@@ -101,9 +101,21 @@ extension CommandInfoV0 {
 
       switch arg.kind {
       case .option, .positional:
-        let (argumentAction, setupScript) = argumentActionAndSetupScript(arg)
+        var (argumentAction, setupScript) = argumentActionAndSetupScript(arg)
+        var optionalValueIndicator = ""
+        if arg.completesDelimiter {
+          // The value is optional, and the action completes it only after `=`.
+          optionalValueIndicator = ":"
+          if argumentAction.hasPrefix("{") && argumentAction.hasSuffix("}") {
+            argumentAction = String(argumentAction.dropFirst().dropLast())
+          }
+          argumentAction =
+            argumentAction.isEmpty
+            ? "{compset -P \"=\"}"
+            : "{compset -P \"=\" && \(argumentAction)}"
+        }
         return (
-          "'\(line):\(arg.valueName?.zshEscapeForSingleQuotedOptionSpec() ?? ""):\(argumentAction)'",
+          "'\(line):\(optionalValueIndicator)\(arg.valueName?.zshEscapeForSingleQuotedOptionSpec() ?? ""):\(argumentAction)'",
           setupScript
         )
       case .flag:
@@ -264,21 +276,40 @@ extension ArgumentInfoV0 {
     else { return false }
 
     switch parsingStrategy {
-    case .default, .unconditional: return true
+    case .default, .unconditional, .attached: return true
     default: return false
     }
+  }
+
+  /// Whether the action of this argument's option spec must complete the `=`
+  /// that delimits a value from a name, instead of the option spec requiring
+  /// it.
+  ///
+  /// An option spec that requires `=` always completes a name with `=`, which
+  /// is unwanted for an option that forbids separated values, but whose value
+  /// is optional. Only long names are supported, because a spec whose value
+  /// directly follows a short name would also allow a joined value.
+  fileprivate var completesDelimiter: Bool {
+    forbidsSeparatedValues && defaultAsFlagValue != nil
+      && (names ?? []).allSatisfy { $0.kind == .long }
   }
 
   /// The suffix of the given name of this argument in an option spec, which
   /// determines how a value can be attached to the name in the same word, if
   /// this argument is an option.
   ///
+  /// - `-` requires the value to directly follow the name.
+  /// - `=-` requires the value to follow `=`.
   /// - `+` allows the value to directly follow the name.
   /// - `=` allows the value to follow `=`. It also allows the value to
   ///   directly follow a short name, so it isn't used for short names.
   fileprivate func attachedValueSuffix(for name: NameInfoV0) -> String {
     guard kind == .option else { return "" }
-    return name.allowsJoinedValue == true ? "+" : name.kind == .short ? "" : "="
+    let allowsJoinedValue = name.allowsJoinedValue == true
+    if forbidsSeparatedValues {
+      return allowsJoinedValue || completesDelimiter ? "-" : "=-"
+    }
+    return allowsJoinedValue ? "+" : name.kind == .short ? "" : "="
   }
 
   fileprivate var completionAbstract: String {

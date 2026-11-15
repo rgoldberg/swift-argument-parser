@@ -26,6 +26,7 @@ __defaultasflag-test_cursor_index_in_current_word() {
 # - non_repeating_flags: the non-repeating flags that the current (sub)command can accept
 # - repeating_options: the repeating options that the current (sub)command can accept
 # - non_repeating_options: the non-repeating options that the current (sub)command can accept
+# - delimited_value_options: the flags that are options that require a value delimited from them by =
 # - positional_number: value ignored
 # - unparsed_words: unparsed words from the current command line
 #
@@ -126,6 +127,18 @@ __defaultasflag-test_offer_flags_options() {
         && [[ ("${cur}" = -* && "${positional_number}" -ge 0) || "${positional_number}" -eq -1 ]]
     then
         COMPREPLY+=($(compgen -W "${repeating_flags[*]} ${non_repeating_flags[*]} ${repeating_options[*]} ${non_repeating_options[*]}" -- "${cur}"))
+
+        # If the only completion is an option that requires a delimited value, follow it by = instead of by a space
+        if [[ "${#COMPREPLY[@]}" -eq 1 ]]; then
+            local option
+            for option in "${delimited_value_options[@]}"; do
+                if [[ "${COMPREPLY[0]}" = "${option}" ]]; then
+                    # bash 3 can't omit the space; +o filenames prevents = from being escaped
+                    compopt -o nospace +o filenames 2> /dev/null && COMPREPLY[0]+='='
+                    break
+                fi
+            done
+        fi
     fi
 }
 
@@ -214,6 +227,7 @@ _defaultasflag-test() {
     local -a non_repeating_flags=(--help -h --help)
     local -a repeating_options=()
     local -a non_repeating_options=(--bin-path --count --verbose --log-level)
+    local -a delimited_value_options=()
     __defaultasflag-test_offer_flags_options 1
 
     # Offer option value completions

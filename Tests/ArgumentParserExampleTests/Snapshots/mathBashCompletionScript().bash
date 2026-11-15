@@ -26,6 +26,7 @@ __math_cursor_index_in_current_word() {
 # - non_repeating_flags: the non-repeating flags that the current (sub)command can accept
 # - repeating_options: the repeating options that the current (sub)command can accept
 # - non_repeating_options: the non-repeating options that the current (sub)command can accept
+# - delimited_value_options: the flags that are options that require a value delimited from them by =
 # - positional_number: value ignored
 # - unparsed_words: unparsed words from the current command line
 #
@@ -126,6 +127,18 @@ __math_offer_flags_options() {
         && [[ ("${cur}" = -* && "${positional_number}" -ge 0) || "${positional_number}" -eq -1 ]]
     then
         COMPREPLY+=($(compgen -W "${repeating_flags[*]} ${non_repeating_flags[*]} ${repeating_options[*]} ${non_repeating_options[*]}" -- "${cur}"))
+
+        # If the only completion is an option that requires a delimited value, follow it by = instead of by a space
+        if [[ "${#COMPREPLY[@]}" -eq 1 ]]; then
+            local option
+            for option in "${delimited_value_options[@]}"; do
+                if [[ "${COMPREPLY[0]}" = "${option}" ]]; then
+                    # bash 3 can't omit the space; +o filenames prevents = from being escaped
+                    compopt -o nospace +o filenames 2> /dev/null && COMPREPLY[0]+='='
+                    break
+                fi
+            done
+        fi
     fi
 }
 
@@ -214,6 +227,7 @@ _math() {
     local -a non_repeating_flags=(--version -h --help)
     local -a repeating_options=()
     local -a non_repeating_options=()
+    local -a delimited_value_options=()
     __math_offer_flags_options 0
 
     # Offer subcommand / subcommand argument completions
@@ -237,6 +251,7 @@ _math_add() {
     non_repeating_flags=(--hex-output -x --version -h --help)
     repeating_options=()
     non_repeating_options=()
+    delimited_value_options=()
     __math_offer_flags_options -1
 }
 
@@ -245,6 +260,7 @@ _math_multiply() {
     non_repeating_flags=(--hex-output -x --version -h --help)
     repeating_options=()
     non_repeating_options=()
+    delimited_value_options=()
     __math_offer_flags_options -1
 }
 
@@ -253,6 +269,7 @@ _math_stats() {
     non_repeating_flags=(--version -h --help)
     repeating_options=()
     non_repeating_options=()
+    delimited_value_options=()
     __math_offer_flags_options 0
 
     # Offer subcommand / subcommand argument completions
@@ -276,6 +293,7 @@ _math_stats_average() {
     non_repeating_flags=(--version -h --help)
     repeating_options=()
     non_repeating_options=(--kind)
+    delimited_value_options=()
     __math_offer_flags_options -1
 
     # Offer option value completions
@@ -292,6 +310,7 @@ _math_stats_stdev() {
     non_repeating_flags=(--version -h --help)
     repeating_options=()
     non_repeating_options=()
+    delimited_value_options=()
     __math_offer_flags_options -1
 }
 
@@ -300,6 +319,7 @@ _math_stats_quantiles() {
     non_repeating_flags=(--version -h --help)
     repeating_options=()
     non_repeating_options=(--file --directory --shell --custom --custom-deprecated)
+    delimited_value_options=()
     __math_offer_flags_options -1
 
     # Offer option value completions
@@ -348,6 +368,7 @@ _math_help() {
     non_repeating_flags=(--version)
     repeating_options=()
     non_repeating_options=()
+    delimited_value_options=()
     __math_offer_flags_options -1
 }
 
