@@ -1,5 +1,6 @@
 add_library(EndToEndTests
   AsyncCommandEndToEndTests.swift
+  AttachedValueEndToEndTests.swift
   CustomParsingEndToEndTests.swift
   DefaultsEndToEndTests.swift
   EnumEndToEndTests.swift

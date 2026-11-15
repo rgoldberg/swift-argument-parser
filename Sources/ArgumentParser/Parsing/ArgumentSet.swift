@@ -435,6 +435,12 @@ struct LenientParser {
     case .postTerminator, .allUnrecognized:
       // These parsing kinds are for arguments only.
       throw ParserError.invalidState
+
+    case .attached:
+      // We need an attached value for this option.
+      if try parseAttachedValue() == nil {
+        throw errorForMissingValue(originElement, parsed)
+      }
     }
   }
 

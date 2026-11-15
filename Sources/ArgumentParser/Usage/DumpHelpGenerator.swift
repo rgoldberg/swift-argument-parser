@@ -180,6 +180,8 @@ extension ArgumentInfoV0.ParsingStrategyV0 {
       self = .postTerminator
     case .allUnrecognized:
       self = .allUnrecognized
+    case .attached:
+      self = .attached
     }
   }
 }

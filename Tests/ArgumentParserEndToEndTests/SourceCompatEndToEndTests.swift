@@ -224,7 +224,44 @@ struct AllFlags: ParsableArguments {
   @Flag() var h3: [E]
 }
 
+private struct AllOptionParsingStrategies: ParsableArguments {
+  @Option(parsing: .next) var a0: Int
+  @Option(parsing: .unconditional) var a1: Int
+  @Option(parsing: .scanningForValue) var a2: Int
+  @Option(parsing: .attached) var a3: Int
+
+  @Option(defaultAsFlag: 0, parsing: .next) var b0: Int?
+  @Option(defaultAsFlag: 0, parsing: .scanningForValue) var b1: Int?
+  @Option(defaultAsFlag: 0, parsing: .attached) var b2: Int?
+
+  @Option(parsing: .singleValue) var c0: [Int]
+  @Option(parsing: .unconditionalSingleValue) var c1: [Int]
+  @Option(parsing: .upToNextOption) var c2: [Int]
+  @Option(parsing: .remaining) var c3: [Int]
+  @Option(parsing: .attached) var c4: [Int]
+}
+
 extension SourceCompatEndToEndTests {
+  @Test func optionParsingStrategies() throws {
+    _ = AllOptionParsingStrategies()
+
+    let single: Set<SingleValueParsingStrategy> = [
+      .next, .unconditional, .scanningForValue, .attached,
+    ]
+    #expect(single.count == 4)
+
+    let defaultAsFlag: Set<DefaultAsFlagParsingStrategy> = [
+      .next, .scanningForValue, .attached,
+    ]
+    #expect(defaultAsFlag.count == 3)
+
+    let array: Set<ArrayParsingStrategy> = [
+      .singleValue, .unconditionalSingleValue, .upToNextOption, .remaining,
+      .attached,
+    ]
+    #expect(array.count == 5)
+  }
+
   @Test func parsingAll() throws {
     // This is just checking building the argument definitions, not the actual
     // validation or usage of these definitions, which would fail.

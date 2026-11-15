@@ -83,11 +83,11 @@ extension ArgumentDefinition {
 
       return switch update {
       case .unary:
-        "\(joinedSynopsisString) <\(valueName)>"
+        "\(joinedSynopsisString)\(nameValueDelimiter)<\(valueName)>"
       case .nullary:
         joinedSynopsisString
       case .optionalUnary:
-        "\(joinedSynopsisString) [<\(valueName)>]"
+        "\(joinedSynopsisString)\(optionalValueSynopsis)"
       }
     case .positional:
       return "<\(valueName)>"
@@ -105,17 +105,30 @@ extension ArgumentDefinition {
 
       return switch update {
       case .unary:
-        "\(name.synopsisString) <\(valueName)>"
+        "\(name.synopsisString)\(nameValueDelimiter)<\(valueName)>"
       case .nullary:
         name.synopsisString
       case .optionalUnary:
-        "\(name.synopsisString) [<\(valueName)>]"
+        "\(name.synopsisString)\(optionalValueSynopsis)"
       }
     case .positional:
       return "<\(valueName)>"
     case .default:
       return ""
     }
+  }
+
+  /// The delimiter that the synopsis shows between a name of this argument &
+  /// its value: a space, unless this argument forbids separated values, in
+  /// which case `=`.
+  var nameValueDelimiter: Character {
+    parsingStrategy == .attached ? "=" : " "
+  }
+
+  /// The synopsis of the value of an option whose value is optional.
+  private var optionalValueSynopsis: String {
+    parsingStrategy == .attached
+      ? "[\(nameValueDelimiter)<\(valueName)>]" : " [<\(valueName)>]"
   }
 
   var synopsis: String {
@@ -487,9 +500,9 @@ extension ErrorMessageGenerator {
 
 extension ArgumentDefinition {
   /// The synopsis of the given name of this argument followed by its value
-  /// (e.g., `--foo <foo>`).
+  /// (e.g., `--foo <foo>` or `--foo=<foo>`).
   fileprivate func synopsis(for name: Name) -> String {
-    "\(name.synopsisString) <\(valueName)>"
+    "\(name.synopsisString)\(nameValueDelimiter)<\(valueName)>"
   }
 
   fileprivate var formattedValueList: String {

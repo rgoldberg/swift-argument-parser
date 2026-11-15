@@ -171,6 +171,16 @@ public struct ArgumentInfoV0: Codable, Hashable {
     /// Collect all unused inputs once recognized arguments/options/flags have
     /// been parsed.
     case allUnrecognized
+    /// Parse only a value attached to the option, either delimited (e.g.,
+    /// `--foo=bar`) or joined (e.g., `-fbar`), never a separate
+    /// `SplitArguments.Element`.
+    ///
+    /// - Note: This case was added after `ParsingStrategyV0` was first
+    ///   released, so a tool built with an earlier version of
+    ///   `ArgumentParserToolInfo` fails to decode any `ArgumentInfoV0` that
+    ///   uses it. Cases shouldn't be added to a future `ParsingStrategyV1`
+    ///   after its release, or it should decode unknown cases.
+    case attached
   }
 
   public enum CompletionKindV0: Codable, Hashable {

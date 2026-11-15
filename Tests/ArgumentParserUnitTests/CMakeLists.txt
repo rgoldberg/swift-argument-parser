@@ -4,6 +4,7 @@ add_library(UnitTests
   HelpGenerationTests.swift
   HelpGenerationTests+AtArgument.swift
   HelpGenerationTests+AtOption.swift
+  HelpGenerationTests+AtOptionAttachedValue.swift
   HelpGenerationTests+GroupName.swift
   HelpGenerationTests+HelpBanner.swift
   NameSpecificationTests.swift

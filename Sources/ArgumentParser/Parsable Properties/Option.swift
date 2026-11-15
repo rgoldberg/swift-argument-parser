@@ -159,8 +159,24 @@ public struct SingleValueParsingStrategy: Hashable {
   public static var scanningForValue: SingleValueParsingStrategy {
     self.init(base: .scanningForValue)
   }
-}
 
+  /// Parse only a value attached to the option, never a subsequent input.
+  ///
+  /// For example, if `--foo` uses this strategy, then `--foo=bar` uses `bar`
+  /// as the value for `--foo`, while `--foo bar` doesn't provide any value for
+  /// `--foo`, which leaves `bar` to be parsed as a positional argument.
+  ///
+  /// An attached value is either delimited from any name of the option by `=`
+  /// (e.g., `--foo=bar`), or joined to a short name that allows it (e.g.,
+  /// `-fbar`).
+  ///
+  /// The help for an option that uses this strategy delimits its value:
+  ///
+  ///     Usage: command [--foo=<foo>]
+  public static var attached: SingleValueParsingStrategy {
+    self.init(base: .attached)
+  }
+}
 /// The strategy to use when parsing a single value from `@Option` arguments with `defaultAsFlag`.
 ///
 /// This is a subset of `SingleValueParsingStrategy` that excludes strategies incompatible
@@ -197,8 +213,25 @@ public struct DefaultAsFlagParsingStrategy: Hashable {
   public static var scanningForValue: DefaultAsFlagParsingStrategy {
     self.init(base: .scanningForValue)
   }
-}
 
+  /// Parse only a value attached to the option, never a subsequent input.
+  ///
+  /// For example, if `--foo` uses this strategy, then `--foo=bar` uses `bar`
+  /// as the value for `--foo`, while `--foo bar` uses the default flag
+  /// value for `--foo`, which leaves `bar` to be parsed as a positional
+  /// argument.
+  ///
+  /// An attached value is either delimited from any name of the option by `=`
+  /// (e.g., `--foo=bar`), or joined to a short name that allows it (e.g.,
+  /// `-fbar`).
+  ///
+  /// The help for an option that uses this strategy delimits its value:
+  ///
+  ///     Usage: command [--foo[=<foo>]]
+  public static var attached: DefaultAsFlagParsingStrategy {
+    self.init(base: .attached)
+  }
+}
 extension SingleValueParsingStrategy: Sendable {}
 extension DefaultAsFlagParsingStrategy: Sendable {}
 
@@ -280,8 +313,26 @@ public struct ArrayParsingStrategy: Hashable {
   public static var remaining: ArrayParsingStrategy {
     self.init(base: .allRemainingInput)
   }
-}
 
+  /// Parse one value attached to each option, never a subsequent input,
+  /// joining multiple into an array.
+  ///
+  /// For example, if `--foo` uses this strategy, then `--foo=bar --foo=baz`
+  /// uses `["bar", "baz"]` as the value for `--foo`, while `--foo bar` doesn't
+  /// provide any value for `--foo`, which leaves `bar` to be parsed as a
+  /// positional argument.
+  ///
+  /// An attached value is either delimited from any name of the option by `=`
+  /// (e.g., `--foo=bar`), or joined to a short name that allows it (e.g.,
+  /// `-fbar`).
+  ///
+  /// The help for an option that uses this strategy delimits its value:
+  ///
+  ///     Usage: command [--foo=<foo> ...]
+  public static var attached: ArrayParsingStrategy {
+    self.init(base: .attached)
+  }
+}
 extension ArrayParsingStrategy: Sendable {}
 
 // MARK: - @Option T: ExpressibleByArgument Initializers

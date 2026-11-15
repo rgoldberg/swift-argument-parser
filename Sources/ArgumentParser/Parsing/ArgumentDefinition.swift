@@ -102,6 +102,10 @@ struct ArgumentDefinition {
     /// Collect all unused inputs once recognized arguments/options/flags have
     /// been parsed.
     case allUnrecognized
+    /// Parse only a value attached to the option, either delimited (e.g.,
+    /// `--foo=bar`) or joined (e.g., `-fbar`), never a separate
+    /// `SplitArguments.Element`.
+    case attached
   }
 
   var kind: Kind
