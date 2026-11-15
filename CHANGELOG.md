@@ -10,6 +10,10 @@ Add new items at the end of the relevant section under **Unreleased**.
 
 - `CommandConfiguration` now accepts a `helpBanner`, a string printed verbatim above the overview on a command's help screen and inherited by its subcommands unless they provide their own banner or the empty string.
 
+### Fixes
+
+- The error message for a missing value now shows the value name for a short name that allows joined values (e.g., `Missing value for '-D <D>'` instead of `Missing value for '-D'`).
+
 ---
 
 ## [1.8.2] - 2026-06-04

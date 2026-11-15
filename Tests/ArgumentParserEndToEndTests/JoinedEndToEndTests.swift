@@ -30,6 +30,11 @@ private struct Foo: ParsableArguments {
 
 // swift-format-ignore: AlwaysUseLowerCamelCase
 extension JoinedEndToEndTests {
+  @Test func missingValueMessage() throws {
+    expectErrorMessage(Foo.self, ["-d"], "Missing value for '-d <d>'")
+    expectErrorMessage(Foo.self, ["-f"], "Missing value for '-f <f>'")
+  }
+
   @Test func singleValueParsing() throws {
     expectParse(Foo.self, []) { foo in
       #expect(foo.file == "")

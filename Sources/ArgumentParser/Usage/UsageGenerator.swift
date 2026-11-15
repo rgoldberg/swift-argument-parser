@@ -81,13 +81,13 @@ extension ArgumentDefinition {
         .map { $0.synopsisString }
         .joined(separator: ", ")
 
-      switch update {
+      return switch update {
       case .unary:
-        return "\(joinedSynopsisString) <\(valueName)>"
+        "\(joinedSynopsisString) <\(valueName)>"
       case .nullary:
-        return joinedSynopsisString
+        joinedSynopsisString
       case .optionalUnary:
-        return "\(joinedSynopsisString) [<\(valueName)>]"
+        "\(joinedSynopsisString) [<\(valueName)>]"
       }
     case .positional:
       return "<\(valueName)>"
@@ -103,13 +103,13 @@ extension ArgumentDefinition {
         fatalError("preferredName cannot be nil for named arguments")
       }
 
-      switch update {
+      return switch update {
       case .unary:
-        return "\(name.synopsisString) <\(valueName)>"
+        "\(name.synopsisString) <\(valueName)>"
       case .nullary:
-        return name.synopsisString
+        name.synopsisString
       case .optionalUnary:
-        return "\(name.synopsisString) [<\(valueName)>]"
+        "\(name.synopsisString) [<\(valueName)>]"
       }
     case .positional:
       return "<\(valueName)>"
@@ -263,10 +263,9 @@ extension ErrorMessageGenerator {
       .map { $0.help }
   }
 
-  func valueName(for name: Name) -> String? {
+  func argument(for name: Name) -> ArgumentDefinition? {
     arguments
-      .first { $0.names.contains(name) }
-      .map { $0.valueName }
+      .first { $0.names.contains { $0.nameToMatch == name.nameToMatch } }
   }
 }
 
@@ -330,8 +329,8 @@ extension ErrorMessageGenerator {
   }
 
   func missingValueForOptionMessage(origin: InputOrigin, name: Name) -> String {
-    if let valueName = valueName(for: name) {
-      return "Missing value for '\(name.synopsisString) <\(valueName)>'"
+    if let argument = argument(for: name) {
+      return "Missing value for '\(argument.synopsis(for: name))'"
     } else {
       return "Missing value for '\(name.synopsisString)'"
     }
@@ -430,25 +429,25 @@ extension ErrorMessageGenerator {
   ) -> String {
     guard let abstract = help(for: key)?.abstract else { return "" }
 
-    let valueName = arguments(for: key).first?.valueName
+    let argument = arguments(for: key).first
 
-    switch (name, valueName) {
-    case (let n?, let v?):
-      return "\(n.synopsisString) <\(v)>  \(abstract)"
-    case (_, let v?):
-      return "<\(v)>  \(abstract)"
+    return switch (name, argument) {
+    case (let n?, let a?):
+      "\(a.synopsis(for: n))  \(abstract)"
+    case (_, let a?):
+      "<\(a.valueName)>  \(abstract)"
     case (_, _):
-      return ""
+      ""
     }
   }
 
   func missingValueForOptionHelpMessage(name: Name) -> String {
-    guard let arg = arguments.first(where: { $0.names.contains(name) }) else {
+    guard let arg = argument(for: name) else {
       return ""
     }
 
     let help = arg.help.abstract
-    return "\(name.synopsisString) <\(arg.valueName)>  \(help)"
+    return "\(arg.synopsis(for: name))  \(help)"
   }
 
   func noValueHelpMessage(key: InputKey) -> String {
@@ -466,36 +465,33 @@ extension ErrorMessageGenerator {
     error: Error?
   ) -> String {
     let argumentValue = arguments(for: key).first
-    let valueName = argumentValue?.valueName
+    let suffix =
+      switch (name, argumentValue) {
+      case (let n?, let a?):
+        " for '\(a.synopsis(for: n))'"
+      case (_, let a?):
+        " for '<\(a.valueName)>'"
+      case (let n?, _):
+        " for '\(n.synopsisString)'"
+      case (_, _):
+        ""
+      }
 
-    // We want to make the "best effort" in producing a custom error message.
-    // We favor `LocalizedError.errorDescription` and fall back to
-    // `CustomStringConvertible`. To opt in, return your custom error message
-    // as the `description` property of `CustomStringConvertible`.
-    let customErrorMessage: String
-    switch error {
-    case .some(let error):
-      customErrorMessage = ": " + error.describe()
-    case .none:
-      customErrorMessage = argumentValue?.formattedValueList ?? ""
-    }
-
-    switch (name, valueName) {
-    case (let n?, let v?):
-      return
-        "The value '\(value)' is invalid for '\(n.synopsisString) <\(v)>'\(customErrorMessage)"
-    case (_, let v?):
-      return "The value '\(value)' is invalid for '<\(v)>'\(customErrorMessage)"
-    case (let n?, _):
-      return
-        "The value '\(value)' is invalid for '\(n.synopsisString)'\(customErrorMessage)"
-    case (nil, nil):
-      return "The value '\(value)' is invalid.\(customErrorMessage)"
-    }
+    // Make a "best effort" custom error message. Favor `LocalizedError.errorDescription`,
+    // falling back to `CustomStringConvertible`. To opt in, return a custom error message
+    // as the `CustomStringConvertible.description` property.
+    return
+      "The value '\(value)' is invalid\(suffix)\(error.map { ": " + $0.describe() } ?? argumentValue?.formattedValueList ?? "")"
   }
 }
 
 extension ArgumentDefinition {
+  /// The synopsis of the given name of this argument followed by its value
+  /// (e.g., `--foo <foo>`).
+  fileprivate func synopsis(for name: Name) -> String {
+    "\(name.synopsisString) <\(valueName)>"
+  }
+
   fileprivate var formattedValueList: String {
     if help.allValueStrings.isEmpty {
       return ""
