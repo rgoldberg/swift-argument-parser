@@ -131,11 +131,28 @@ Each shell's completion system prevents some attached option values from being c
 
 Bash completes every delimited and joined option value.
 
+For an option that uses the `attached` parsing strategy and requires a value:
+
+- Bash 3 follows the option's completed name by a space instead of by `=`, because it can't suppress the space. Delete the space before typing `=`.
+
 #### Zsh
 
 - A delimited value after a short name (e.g., `-o=val`) isn't completed, because the zsh option spec that accepts it also completes a joined value (e.g., `-oval`), which is invalid for a name that doesn't allow joined values.
 
+For an option that uses the `attached` parsing strategy:
+
+- A delimited value after a short name that allows joined values (e.g., `-o=val`) isn't completed, because the zsh option spec that completes a joined value treats `=val` as that value.
+- A short name that doesn't allow joined values isn't followed by `=` when it is completed, because zsh offers other short names to combine with it instead. A delimited value is completed once `=` is typed.
+- The completed name of an option that has a `defaultAsFlag` value is followed by `=`, even though its value is optional, unless all of the option's names are long names (e.g., `--option`), because the zsh option spec that doesn't add `=` would also complete a joined value after a short name.
+
 #### Fish
+
+For an option that doesn't use the `attached` parsing strategy:
 
 - A delimited value after a short name (e.g., `-o=val`) isn't completed, because fish only completes a joined value after a short option.
 - A joined value (e.g., `-oval`) is completed after every short name, even one that doesn't allow joined values, for the same reason.
+
+For an option that uses the `attached` parsing strategy:
+
+- A delimited value after a short name that allows joined values (e.g., `-o=val`) isn't completed, because fish only completes a joined value after a short option.
+- A separated value (e.g., `-o val`) is completed after any name of an option that has a short name that allows joined values, even though the option doesn't accept it, because fish can't complete a joined value without also completing a separated value.

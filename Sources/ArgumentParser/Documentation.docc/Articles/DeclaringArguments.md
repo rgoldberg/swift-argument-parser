@@ -12,13 +12,13 @@ When creating commands, you can define three primary kinds of command-line input
   % example file1.swift file2.swift file3.swift
   ```
 
-- *Options* are named key-value pairs. Keys start with one or two dashes (`-` or `--`), and a user can separate the key and value with an equal sign (`=`) or a space (see ``Option``). This command is called with two options:
+- *Options* are named key-value pairs. Keys start with one or two dashes (`-` or `--`). A user can delimit a value from a key with an equal sign (`=`) in the same shell word, or provide a separated value in a subsequent shell word (see ``Option``). For example, this command is called with two options:
 
   ```
   % example --count=5 --index 2
   ```
 
-- *Flags* are like options, but without a paired value. Instead, their presence indicates a particular value (see ``Flag``). This command is called with two flags:
+- *Flags* are like options, but without paired values. Instead, their presence indicates a particular value (see ``Flag``). For example, this command is called with two flags:
 
   ```
   % example --verbose --strip-whitespace
@@ -93,7 +93,7 @@ Your lucky numbers are:
 
 By default, options and flags derive the name that you use on the command line from the name of the property, such as `--count` and `--index`. Camel-case names are converted to lowercase with hyphen-separated words, like `--strip-whitespace`.
 
-You can override this default by providing a string with your required command-line spellings, or by specifying one or more name specifications in the `@Option` or `@Flag` initializers. This command demonstrates multiple name specifications:
+You can override this default by providing a string with your required command-line spellings, or by specifying one or more name specifications in the `@Option` or `@Flag` initializers. For example, this command demonstrates multiple name specifications:
 
 ```swift
 struct Example: ParsableCommand {
@@ -581,4 +581,44 @@ This way any unknown parameters are silently captured in the `unknowns` array.
 ```
 % example --flag --verbose --option abc file1.swift
 Verbose: true
+```
+
+
+### Attached vs. separated option values
+
+In the following descending precedence, an option sources its value from:
+
+1. An **attached value** in the same shell word as the option's name, which is either:
+   - A **delimited value** following `=`. For example, `value` for `--option=value`.
+   - A **joined value** directly following a short name that allows joined values. For example, `value` for `-ovalue`.
+2. A **separated value** from a subsequent shell word, pursuant to the option's parsing strategy. For example, for the `next` parsing strategy, `value` for `--option value`.
+3. The `defaultAsFlag` value, if specified. For example, if `defaultAsFlag` is `value`, then `value` for `--option`.
+
+If no value is found for an option, an error is reported.
+
+The `attached` parsing strategy forbids separated values. For example, an option that uses `.attached` accepts `--option=value`, but doesn't use `value` as its value for `--option value`.
+
+Help shows an option that:
+
+- Forbids separated values with a delimited value. For example, `--option=<value>`, or `--option[=<value>]` if `defaultAsFlag` is specified.
+- Accepts separated values with a separated value, even though it also accepts attached values. For example, `--option <value>`, or `--option [<value>]` if `defaultAsFlag` is specified.
+
+#### Attached option value example Swift
+
+```swift
+struct Show: ParsableCommand {
+    @Option(defaultAsFlag: "json", parsing: .attached, help: "Set the output format.")
+    var format: String?
+
+    @Argument
+    var ids: [Int]
+}
+```
+
+#### Attached option value example console
+
+```
+% show --format 123          # format = "json", ids = [123]
+% show --format=yaml 123     # format = "yaml", ids = [123]
+% show --format= 123         # format = "",     ids = [123]
 ```
