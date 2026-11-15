@@ -120,3 +120,22 @@ func generateCompletionCandidatesPerShell(_ arguments: [String]) -> [String] {
     }
 }
 ```
+
+### Completing Option Values per Shell
+
+Completion scripts complete a separated option value, which is in the shell word after the option's name (e.g., `--option val`), in every shell. They also complete an attached option value, which is in the same shell word as the option's name: either a delimited value following `=` (e.g., `--option=val`), or a joined value directly following a short name that allows joined values (e.g., `-oval`).
+
+Each shell's completion system prevents some attached option values from being completed:
+
+#### Bash
+
+Bash completes every delimited and joined option value.
+
+#### Zsh
+
+- A delimited value after a short name (e.g., `-o=val`) isn't completed, because the zsh option spec that accepts it also completes a joined value (e.g., `-oval`), which is invalid for a name that doesn't allow joined values.
+
+#### Fish
+
+- A delimited value after a short name (e.g., `-o=val`) isn't completed, because fish only completes a joined value after a short option.
+- A joined value (e.g., `-oval`) is completed after every short name, even one that doesn't allow joined values, for the same reason.
