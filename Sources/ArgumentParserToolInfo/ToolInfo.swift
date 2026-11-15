@@ -129,10 +129,17 @@ public struct ArgumentInfoV0: Codable, Hashable {
     public var kind: KindV0
     /// Single or multi-character name of the argument.
     public var name: String
+    /// Whether a value can be joined to the name (e.g., `-Dvalue`).
+    ///
+    /// `nil` if a value can't be joined to the name.
+    public var allowsJoinedValue: Bool?
 
-    public init(kind: NameInfoV0.KindV0, name: String) {
+    public init(
+      kind: NameInfoV0.KindV0, name: String, allowsJoinedValue: Bool? = nil
+    ) {
       self.kind = kind
       self.name = name
+      self.allowsJoinedValue = allowsJoinedValue
     }
   }
 
@@ -209,6 +216,11 @@ public struct ArgumentInfoV0: Codable, Hashable {
   public var valueName: String?
   /// Default value of the argument is none is specified on the command line.
   public var defaultValue: String?
+  /// Value of the option if it is specified on the command line without a
+  /// value.
+  ///
+  /// `nil` if the option requires a value, or if the argument isn't an option.
+  public var defaultAsFlagValue: String?
   // NOTE: this property will not be renamed to 'allValueStrings' to avoid
   // breaking compatibility with the current serialized format.
   //
@@ -244,6 +256,7 @@ public struct ArgumentInfoV0: Codable, Hashable {
     preferredName: NameInfoV0?,
     valueName: String?,
     defaultValue: String?,
+    defaultAsFlagValue: String? = nil,
     allValueStrings: [String]?,
     allValueDescriptions: [String: String]?,
     completionKind: CompletionKindV0?,
@@ -265,6 +278,7 @@ public struct ArgumentInfoV0: Codable, Hashable {
 
     self.valueName = valueName?.nonEmpty
     self.defaultValue = defaultValue?.nonEmpty
+    self.defaultAsFlagValue = defaultAsFlagValue
     self.allValueStrings = allValueStrings?.nonEmpty
     self.allValueDescriptions = allValueDescriptions?.nonEmpty
 

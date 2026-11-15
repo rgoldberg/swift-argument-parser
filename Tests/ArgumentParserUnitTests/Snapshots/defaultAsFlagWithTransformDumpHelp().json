@@ -3,6 +3,7 @@
     "abstract" : "A command with defaultAsFlag options using transforms for testing dump help.",
     "arguments" : [
       {
+        "defaultAsFlagValue" : "\/default\/output",
         "defaultValue" : "\/default\/output",
         "isOptional" : true,
         "isRepeating" : false,
@@ -22,6 +23,7 @@
         "valueName" : "output-dir"
       },
       {
+        "defaultAsFlagValue" : "INFO",
         "defaultValue" : "INFO",
         "isOptional" : true,
         "isRepeating" : false,

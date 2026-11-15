@@ -3,6 +3,7 @@
     "abstract" : "A command with defaultAsFlag options for testing dump help.",
     "arguments" : [
       {
+        "defaultAsFlagValue" : "\/usr\/bin",
         "defaultValue" : "\/usr\/bin",
         "isOptional" : true,
         "isRepeating" : false,
@@ -22,6 +23,7 @@
         "valueName" : "binary-path"
       },
       {
+        "defaultAsFlagValue" : "42",
         "defaultValue" : "42",
         "isOptional" : true,
         "isRepeating" : false,
@@ -41,6 +43,7 @@
         "valueName" : "count"
       },
       {
+        "defaultAsFlagValue" : "true",
         "defaultValue" : "true",
         "isOptional" : true,
         "isRepeating" : false,

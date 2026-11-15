@@ -124,12 +124,22 @@ extension ArgumentInfoV0 {
         ArgumentInfoV0.NameInfoV0.init),
       valueName: argument.valueName,
       defaultValue: argument.help.defaultValue,
+      defaultAsFlagValue: argument.defaultAsFlagValue,
       allValueStrings: argument.help.allValueStrings,
       allValueDescriptions: allValueDescriptions,
       completionKind: ArgumentInfoV0.CompletionKindV0(
         completion: argument.completion),
       abstract: argument.help.abstract,
       discussion: discussion)
+  }
+}
+
+extension ArgumentDefinition {
+  /// The description of the value of this argument if it is specified without
+  /// a value, if its value is optional.
+  fileprivate var defaultAsFlagValue: String? {
+    guard case .optionalUnary = update else { return nil }
+    return help.defaultValue ?? ""
   }
 }
 
@@ -179,8 +189,10 @@ extension ArgumentInfoV0.NameInfoV0 {
     switch name {
     case .long(let n):
       self.init(kind: .long, name: n)
-    case .short(let n, _):
-      self.init(kind: .short, name: String(n))
+    case .short(let n, let allowingJoined):
+      self.init(
+        kind: .short, name: String(n),
+        allowsJoinedValue: allowingJoined ? true : nil)
     case .longWithSingleDash(let n):
       self.init(kind: .longWithSingleDash, name: n)
     }
