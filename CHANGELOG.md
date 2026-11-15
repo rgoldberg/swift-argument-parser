@@ -10,6 +10,7 @@ Add new items at the end of the relevant section under **Unreleased**.
 
 - `CommandConfiguration` now accepts a `helpBanner`, a string printed verbatim above the overview on a command's help screen and inherited by its subcommands unless they provide their own banner or the empty string.
 - The `--experimental-dump-help` output now includes an option's `defaultAsFlagValue`, and whether a value can be joined to each of its names (`allowsJoinedValue`).
+- Bash completion scripts now complete an option value that follows `=` (e.g., `--option=val`) or that is joined to a name that allows it (e.g., `-oval`).
 
 ### Fixes
 

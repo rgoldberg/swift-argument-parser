@@ -73,7 +73,9 @@ __base-test_offer_flags_options() {
                     [[ "${word}" = "${option}" ]] && is_parsing_option_value=true && break
                 done
 
-                # Remove ${word} from ${non_repeating_flags} or ${non_repeating_options} so it isn't offered again
+                # Remove ${word}, without any value delimited from it by =, from ${non_repeating_flags}
+                # or ${non_repeating_options} so it isn't offered again
+                word="${word%%=*}"
                 local not_found=true
                 local -i index
                 for index in "${!non_repeating_flags[@]}"; do
@@ -130,7 +132,7 @@ __base-test_offer_flags_options() {
 __base-test_add_completions() {
     local completion
     while IFS='' read -r completion; do
-        COMPREPLY+=("${completion}")
+        COMPREPLY+=("${cur_prefix}${completion}")
     done < <(IFS=$'\n' compgen "${@}" -- "${cur}")
 }
 
@@ -156,11 +158,57 @@ _base-test() {
     SAP_SHELL_VERSION="$(IFS='.';printf %s "${BASH_VERSINFO[*]}")"
     local -r SAP_SHELL_VERSION
 
-    local -r cur="${2}"
-    local -r prev="${3}"
+    local cur="${2}"
+    local prev="${3}"
 
+    # The part of the current word before ${cur}, which must be prepended to each completion,
+    # if the shell replaces the entire current word instead of only ${cur}
+    local cur_prefix=''
+
+    # If ${cur} is a value delimited from an option by =, set ${prev} to that option
+    local is_attached_value=false
+    if [[ "${cur}" = -*=* ]]; then
+        # COMP_WORDBREAKS doesn't contain =, so ${cur} is the option, =, and the value
+        prev="${cur%%=*}"
+        cur_prefix="${prev}="
+        cur="${cur#*=}"
+        is_attached_value=true
+    elif [[ "${COMP_WORDS[COMP_CWORD]}" = '=' && "${prev}" = -* ]]; then
+        # bash 4+ split the option, =, and an empty value into separate words
+        is_attached_value=true
+    elif [[ "${prev}" = '=' && "${COMP_CWORD}" -ge 2 && "${COMP_WORDS[COMP_CWORD - 2]}" = -* ]]; then
+        # bash 4+ split the option, =, and a non-empty value into separate words
+        prev="${COMP_WORDS[COMP_CWORD - 2]}"
+        is_attached_value=true
+    elif [[ "${COMP_WORDS[COMP_CWORD]}" = -*=* && "${COMP_WORDS[COMP_CWORD]#*=}" = "${cur}" ]]; then
+        # bash 3 keeps the option, =, and the value in one word
+        prev="${COMP_WORDS[COMP_CWORD]%%=*}"
+        is_attached_value=true
+    fi
     local -i positional_number
-    local -a unparsed_words=("${COMP_WORDS[@]:1:${COMP_CWORD}}")
+
+    # Rejoin each option with any value delimited from it by =, which bash 4+ split into separate words
+    local -a unparsed_words=()
+    local -i comp_word_index
+    local -i last_index
+    for ((comp_word_index = 1; comp_word_index <= COMP_CWORD; comp_word_index++)); do
+        last_index="$((${#unparsed_words[@]} - 1))"
+        if [[\
+            "${COMP_WORDS[comp_word_index]}" = '='\
+            && "${last_index}" -ge 0\
+            && "${unparsed_words[last_index]}" = -*\
+            && "${unparsed_words[last_index]}" != --\
+            && "${unparsed_words[last_index]}" != *=*\
+        ]]; then
+            unparsed_words[last_index]+='='
+            if [[ "${comp_word_index}" -lt "${COMP_CWORD}" ]]; then
+                ((comp_word_index++))
+                unparsed_words[last_index]+="${COMP_WORDS[comp_word_index]}"
+            fi
+        else
+            unparsed_words+=("${COMP_WORDS[comp_word_index]}")
+        fi
+    done
 
     local -a repeating_flags=(--kind-counter)
     local -a non_repeating_flags=(--one --two --custom-three -h --help)
