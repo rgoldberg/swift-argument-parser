@@ -42,10 +42,10 @@ _defaultasflag-test() {
     local -i ret=1
     local -ar ___log_level=('DEBUG' 'INFO' 'WARN' 'ERROR')
     local -ar arg_specs=(
-        '--bin-path:bin-path:_files -/'
-        '--count:count:'
-        '--verbose:verbose:'
-        '--log-level:log-level:{__defaultasflag-test_complete "${___log_level[@]}"}'
+        '--bin-path=:bin-path:_files -/'
+        '--count=:count:'
+        '--verbose=:verbose:'
+        '--log-level=:log-level:{__defaultasflag-test_complete "${___log_level[@]}"}'
         '--help'
         ':input:_files'
         '(-h --help)'{-h,--help}'[Show help information.]'

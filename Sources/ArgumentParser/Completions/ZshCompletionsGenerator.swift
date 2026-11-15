@@ -82,16 +82,19 @@ extension CommandInfoV0 {
         // swift-format-ignore: NeverForceUnwrap
         // Preconditions: names has exactly one element.
         line = """
-          \(arg.isRepeatingOption ? "*" : "")\(names.first!.commonCompletionSynopsisString().zshEscapeForSingleQuotedOptionSpec())\(arg.completionAbstract)
+          \(arg.isRepeatingOption ? "*" : "")\(names.first!.commonCompletionSynopsisString().zshEscapeForSingleQuotedOptionSpec())\(arg.attachedValueSuffix(for: names.first!))\(arg.completionAbstract)
           """
       default:
         let synopses = names.map {
           $0.commonCompletionSynopsisString()
             .zshEscapeForSingleQuotedOptionSpec()
         }
+        let specs = zip(synopses, names).map { synopsis, name in
+          "\(synopsis)\(arg.attachedValueSuffix(for: name))"
+        }
         line = """
           \(arg.isRepeatingOption ? "*" : "(\(synopses.joined(separator: " ")))")'\
-          {\(synopses.joined(separator: ","))}\
+          {\(specs.joined(separator: ","))}\
           '\(arg.completionAbstract)
           """
       }
@@ -264,6 +267,18 @@ extension ArgumentInfoV0 {
     case .default, .unconditional: return true
     default: return false
     }
+  }
+
+  /// The suffix of the given name of this argument in an option spec, which
+  /// determines how a value can be attached to the name in the same word, if
+  /// this argument is an option.
+  ///
+  /// - `+` allows the value to directly follow the name.
+  /// - `=` allows the value to follow `=`. It also allows the value to
+  ///   directly follow a short name, so it isn't used for short names.
+  fileprivate func attachedValueSuffix(for name: NameInfoV0) -> String {
+    guard kind == .option else { return "" }
+    return name.allowsJoinedValue == true ? "+" : name.kind == .short ? "" : "="
   }
 
   fileprivate var completionAbstract: String {

@@ -44,18 +44,18 @@ _base-test() {
     local -ar ___other_kind=('b1_zsh' 'b2_zsh' 'b3_zsh')
     local -ar ___path3=('c1_zsh' 'c2_zsh' 'c3_zsh')
     local -ar arg_specs=(
-        '--name[The user'\''s name.]:name:'
-        '--kind:kind:{__base-test_complete "${___kind[@]}"}'
-        '--other-kind:other-kind:{__base-test_complete "${___other_kind[@]}"}'
-        '--path1:path1:_files'
-        '--path2:path2:_files'
-        '--path3:path3:{__base-test_complete "${___path3[@]}"}'
+        '--name=[The user'\''s name.]:name:'
+        '--kind=:kind:{__base-test_complete "${___kind[@]}"}'
+        '--other-kind=:other-kind:{__base-test_complete "${___other_kind[@]}"}'
+        '--path1=:path1:_files'
+        '--path2=:path2:_files'
+        '--path3=:path3:{__base-test_complete "${___path3[@]}"}'
         '--one'
         '--two'
         '--custom-three'
         '*--kind-counter'
-        '*--rep1:rep1:'
-        '*'{-r,--rep2}':rep2:'
+        '*--rep1=:rep1:'
+        '*'{-r,--rep2=}':rep2:'
         ':argument:{__base-test_custom_complete ---completion -- positional@0 "${current_word_index}" "$(__base-test_cursor_index_in_current_word)"}'
         ':nested-argument:{__base-test_custom_complete ---completion -- positional@1 "${current_word_index}" "$(__base-test_cursor_index_in_current_word)"}'
         '(-h --help)'{-h,--help}'[Show help information.]'
@@ -98,9 +98,9 @@ _base-test_escaped-command() {
     local -i ret=1
     local -ar ___three=(''\''' '\' 'a b')
     local -ar arg_specs=(
-        '--o\:n\[e[Escaped chars\: '\''\[\]\\.]:path\[\:options\]:'
+        '--o\:n\[e=[Escaped chars\: '\''\[\]\\.]:path\[\:options\]:'
         ':two:{__base-test_custom_complete ---completion escaped-command -- positional@0 "${current_word_index}" "$(__base-test_cursor_index_in_current_word)"}'
-        '--three:three:{__base-test_complete "${___three[@]}"}'
+        '--three=:three:{__base-test_complete "${___three[@]}"}'
         '(-h --help)'{-h,--help}'[Show help information.]'
     )
     _arguments -w -s -S : "${arg_specs[@]}" && ret=0

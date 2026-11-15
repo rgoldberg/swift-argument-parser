@@ -46,11 +46,11 @@ _optionvalue-test() {
     local -ar ___format=('json' 'yaml')
     local -ar __mode=('fast' 'slow')
     local -ar arg_specs=(
-        '--level:level:{__optionvalue-test_complete "${___level[@]}"}'
-        '*'{--tags,-t}':tags:{__optionvalue-test_complete "${___tags[@]}"}'
-        '-D:D:{__optionvalue-test_complete "${__D[@]}"}'
-        '--format:format:{__optionvalue-test_complete "${___format[@]}"}'
-        '-mode:mode:{__optionvalue-test_complete "${__mode[@]}"}'
+        '--level=:level:{__optionvalue-test_complete "${___level[@]}"}'
+        '*'{--tags=,-t}':tags:{__optionvalue-test_complete "${___tags[@]}"}'
+        '-D+:D:{__optionvalue-test_complete "${__D[@]}"}'
+        '--format=:format:{__optionvalue-test_complete "${___format[@]}"}'
+        '-mode=:mode:{__optionvalue-test_complete "${__mode[@]}"}'
         '--verbose'
         ':input:_files'
         '(-h --help)'{-h,--help}'[Show help information.]'
