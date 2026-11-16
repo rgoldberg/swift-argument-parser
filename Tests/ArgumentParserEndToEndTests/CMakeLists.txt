@@ -1,4 +1,5 @@
 add_library(EndToEndTests
+  ArgumentParserDecoderEndToEndTests.swift
   AsyncCommandEndToEndTests.swift
   CustomParsingEndToEndTests.swift
   DefaultsEndToEndTests.swift

@@ -15,10 +15,12 @@
 /// custom `init(from:)` implementations can determine where a value came from.
 ///
 /// Cast any `Decoder` received inside `ParsableArguments.init(from:)` to
-/// this protocol to access the additional capabilities. The cast succeeds
-/// whenever the decoder is one of ArgumentParser's own internal decoders,
-/// i.e., always during normal ArgumentParser parsing, including inside a type
-/// that is decoded via an `@OptionGroup`.
+/// this protocol to access the additional capabilities. Once
+/// `container(keyedBy:)` has returned, the cast succeeds whenever the decoder
+/// is one of ArgumentParser's own internal decoders, i.e., always during
+/// normal ArgumentParser parsing, including inside a type that is decoded via
+/// an `@OptionGroup`. (The decoder that validates a type's coding keys is not
+/// one of them, but its `container(keyedBy:)` always throws.)
 ///
 /// ```swift
 /// struct MyCommand: ParsableCommand {
@@ -73,7 +75,8 @@ public protocol ArgumentParserDecoder: Decoder {
   /// For an option or flag, this is its preferred name: its first long name,
   /// or its first short name if it has no long name (e.g., `download-limit`
   /// for `--download-limit`). For a positional argument, which has no name,
-  /// this is the property name converted like a long name.
+  /// this is its value name: the `valueName` of its help, if any, otherwise
+  /// the property name converted like a long name.
   ///
   /// - Parameter key: A `CodingKey` from the same `CodingKeys` enum used in the
   ///   surrounding `container(keyedBy:)` call.

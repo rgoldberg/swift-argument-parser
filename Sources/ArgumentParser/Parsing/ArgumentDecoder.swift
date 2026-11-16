@@ -93,15 +93,23 @@ extension ArgumentDecoder {
 extension ArgumentDecoder {
   fileprivate func valueSource(forKey key: InputKey) -> ArgumentValueSource {
     guard let element = values.element(forKey: key) else { return .missing }
-    return element.inputOrigin.elements.contains { $0.baseIndex != nil }
-      ? .commandLine : .defaultValue
+    if element.inputOrigin.elements.contains(where: { $0.baseIndex != nil }) {
+      return .commandLine
+    }
+    // A required argument that the command line did not supply still has an
+    // element, whose value is `nil`, like that of an optional argument.
+    return definition(forKey: key)?.help.options.contains(.isOptional) == false
+      ? .missing : .defaultValue
   }
 
   fileprivate func argumentName(forKey key: InputKey) -> String {
-    argumentSet?.content
-      .first { $0.help.keys.contains(key) }?
-      .names.preferredName?.valueString
-      ?? key.name.convertedToSnakeCase(separator: "-")
+    definition(forKey: key).map {
+      $0.names.preferredName?.valueString ?? $0.valueName
+    } ?? key.name.convertedToSnakeCase(separator: "-")
+  }
+
+  private func definition(forKey key: InputKey) -> ArgumentDefinition? {
+    argumentSet?.content.first { $0.help.keys.contains(key) }
   }
 }
 
