@@ -79,13 +79,14 @@ extension ArgumentSet {
       initialValue != nil ? .isOptional : []
     let defaultValueString = initialValue == true ? "true" : nil
 
-    let help = ArgumentDefinition.Help(
+    var help = ArgumentDefinition.Help(
       allValueStrings: [],
       options: helpOptions,
       help: help,
       defaultValue: defaultValueString,
       key: key,
       isComposite: false)
+    help.externalDefaultDescription = { $0 as? Bool == true ? "true" : nil }
     let arg = ArgumentDefinition(
       kind: .name(key: key, specification: name), help: help,
       completion: .default,
@@ -151,13 +152,19 @@ extension ArgumentSet {
       $0 ? enableNames : disableNames
     }
 
-    let enableHelp = ArgumentDefinition.Help(
+    var enableHelp = ArgumentDefinition.Help(
       allValueStrings: [], options: helpOptions, help: help,
       defaultValue: initialValueNames?.first?.synopsisString, key: key,
       isComposite: true)
-    let disableHelp = ArgumentDefinition.Help(
+    enableHelp.externalDefaultDescription = {
+      ($0 as? Bool).flatMap {
+        ($0 ? enableNames : disableNames).first?.synopsisString
+      }
+    }
+    var disableHelp = ArgumentDefinition.Help(
       allValueStrings: [], options: [.isOptional], help: help,
       defaultValue: nil, key: key, isComposite: false)
+    disableHelp.externalDefaultDescription = { _ in nil }
 
     let enableArg = ArgumentDefinition(
       kind: .named(enableNames), help: enableHelp, completion: .default,

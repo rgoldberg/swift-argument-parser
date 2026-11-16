@@ -214,7 +214,7 @@ extension Group: ExternallyDefaulted {
   ) -> ExternalDefault? {
     propertyName == "color"
       ? ExternalDefault(
-        valueDescription: (commandStack + [argumentName]).joined(separator: "."))
+        value: (commandStack + [argumentName]).joined(separator: "."))
       : nil
   }
 }
@@ -227,13 +227,45 @@ extension Sub: ExternallyDefaulted {
   ) -> ExternalDefault? {
     switch propertyName {
     case "country":
-      // A secret value has no description.
-      ExternalDefault(valueDescription: nil)
+      // A secret value is not shown.
+      ExternalDefault(value: nil)
     case "downloadLimit":
-      ExternalDefault(
-        valueDescription: (commandStack + [argumentName]).joined(separator: "."))
+      ExternalDefault(value: 9)
+    case "quiet":
+      ExternalDefault(value: true)
+    case "appIDs":
+      ExternalDefault(value: [1, 2])
     default:
       nil
+    }
+  }
+}
+
+private struct Plain: ParsableArguments {
+  @Option var size = "m"
+}
+
+/// A command that returns an external default value for every property that
+/// it is asked about.
+private struct Flags: ParsableCommand, ExternallyDefaulted {
+  @Flag(inversion: .prefixedNo) var color: Bool
+  @Flag(inversion: .prefixedNo) var sound = true
+  @Flag var loud = false
+  @Flag var shape: Shape
+  @OptionGroup var plain: Plain
+
+  static func externalDefault(
+    forPropertyNamed propertyName: String,
+    argumentName: String,
+    commandStack: [String]
+  ) -> ExternalDefault? {
+    switch propertyName {
+    case "color", "sound", "loud":
+      ExternalDefault(value: false)
+    case "shape":
+      ExternalDefault(value: Shape.square)
+    default:
+      ExternalDefault(value: "\(propertyName).\(argumentName)")
     }
   }
 }
@@ -247,15 +279,34 @@ extension ArgumentParserDecoderEndToEndTests {
 
         ARGUMENTS:
           <target>
-          <app-id>
+          <app-id>                (default: 1, 2)
 
         OPTIONS:
           --country <country>
           -m, --max, --download-limit <max>
-                                  (default: root.sub.max)
+                                  (default: 9)
           --output-directory <output-directory>
-          -q
+          -q                      (default: true)
           --color <color>         (default: root.sub.color)
+          -h, --help              Show help information.
+
+        """)
+  }
+
+  @Test func externalDefaultHelpForFlags() {
+    // A flag is described by the name that gives its value, and the property
+    // of an option group is not that of the type that includes it.
+    #expect(
+      Flags.helpMessage() == """
+        USAGE: flags [--color] [--no-color] [--sound] [--no-sound] [--loud] [--round] [--square] [--oblong] [--size <size>]
+
+        OPTIONS:
+          --color/--no-color      (default: --no-color)
+          --sound/--no-sound      (default: --no-sound)
+          --loud
+          --round/--square/--oblong
+                                  (default: --square)
+          --size <size>           (default: m)
           -h, --help              Show help information.
 
         """)

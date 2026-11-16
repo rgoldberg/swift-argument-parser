@@ -65,6 +65,10 @@ struct ArgumentDefinition {
     /// names of a command stack.
     var externalDefault: (([String]) -> ExternalDefault?)?
 
+    /// Returns the description of an external default value of the argument,
+    /// if it describes one differently than an option does.
+    var externalDefaultDescription: ((Any) -> String?)?
+
     init(
       allValueStrings: [String],
       options: Options,

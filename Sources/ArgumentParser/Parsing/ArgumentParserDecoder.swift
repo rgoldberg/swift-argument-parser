@@ -138,12 +138,16 @@ public protocol ExternallyDefaultable {
 ///     ) -> ExternalDefault? {
 ///         guard propertyName == "limit" else { return nil }
 ///         return ExternalConfig.int(forKey: commandStack + [argumentName])
-///             .map { ExternalDefault(valueDescription: String($0)) }
+///             .map { ExternalDefault(value: $0) }
 ///     }
 /// }
 /// ```
 public protocol ExternallyDefaulted {
   /// Returns the external default value of a property, if any.
+  ///
+  /// This is called only for a property that the conforming type itself
+  /// declares, never for a property of a type that it includes via an
+  /// `@OptionGroup`.
   ///
   /// - Parameters:
   ///   - propertyName: The name of the property.
@@ -163,18 +167,18 @@ public protocol ExternallyDefaulted {
   ) -> ExternalDefault?
 }
 
-/// An external default value of a parsable property, as help output shows it.
-public struct ExternalDefault: Sendable, Hashable {
-  /// The description of the value, or `nil` to show no value (e.g., because
-  /// the value is secret).
-  public var valueDescription: String?
+/// An external default value of a parsable property.
+public struct ExternalDefault {
+  /// The value, which help output describes like a declared default value of
+  /// the property, or `nil` to show no value (e.g., because the value is
+  /// secret).
+  public var value: Any?
 
   /// Creates an external default value.
   ///
-  /// - Parameter valueDescription: The description of the value, or `nil` to
-  ///   show no value.
-  public init(valueDescription: String?) {
-    self.valueDescription = valueDescription
+  /// - Parameter value: The value, or `nil` to show no value.
+  public init(value: Any?) {
+    self.value = value
   }
 }
 
@@ -192,10 +196,31 @@ extension ArgumentSet {
       else { return definition }
       var definition = definition
       definition.help.options.insert(.isOptional)
-      definition.help.defaultValue = externalDefault.valueDescription
+      definition.help.defaultValue = externalDefault.value.flatMap { value in
+        if let describe = definition.help.externalDefaultDescription {
+          return describe(value)
+        }
+        if case .nullary = definition.update { return nil }
+        return ArgumentSet.defaultValueDescription(value)
+      }
       return definition
     }
     return result
+  }
+
+  /// Returns the description of a default value whose type is known only
+  /// dynamically, like that of a declared default value.
+  private static func defaultValueDescription(_ value: Any) -> String? {
+    if let values = value as? [Any] {
+      return values.isEmpty
+        ? nil
+        : values.compactMap(defaultValueDescription).joined(separator: ", ")
+    }
+    if let value = value as? (any CaseIterable & RawRepresentable) {
+      return String(describing: value.rawValue)
+    }
+    return (value as? any ExpressibleByArgument)?.defaultValueDescription
+      ?? String(describing: value)
   }
 }
 

@@ -321,9 +321,9 @@ extension ArgumentSet {
           var argumentSet = parsed.argumentSet(for: key)
           if let type = type as? any ExternallyDefaulted.Type {
             argumentSet.content = argumentSet.content.map { definition in
-              // An argument of an option group is already attached to the
-              // type that declares it.
-              guard definition.help.externalDefault == nil else {
+              // The type that an option group decodes declares each of its
+              // arguments.
+              guard definition.help.keys.contains(key) else {
                 return definition
               }
               let argumentName = definition.externalName

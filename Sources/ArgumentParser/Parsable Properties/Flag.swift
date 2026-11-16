@@ -427,12 +427,13 @@ extension Flag where Value: EnumerableFlag {
         // Create a string representation of the default value. Since this is a
         // flag, the default value to show to the user is the `--value-name`
         // flag that a user would provide on the command line, not a Swift value.
-        let defaultValueFlag = initial.flatMap { value -> String? in
+        func flagName(for value: Value) -> String? {
           let defaultKey = InputKey(
             name: String(describing: value), parent: key)
           let defaultNames = Value.name(for: value).makeNames(defaultKey)
           return defaultNames.first?.synopsisString
         }
+        let defaultValueFlag = initial.flatMap(flagName)
 
         let caseHelps = Value.allCases.map { Value.help(for: $0) }
         let hasCustomCaseHelp = caseHelps.contains(where: { $0 != nil })
@@ -452,13 +453,18 @@ extension Flag where Value: EnumerableFlag {
             defaultValueString = defaultValueFlag
           }
 
-          let help = ArgumentDefinition.Help(
+          var help = ArgumentDefinition.Help(
             allValueStrings: [],
             options: initial != nil ? .isOptional : [],
             help: helpForCase,
             defaultValue: defaultValueString,
             key: key,
             isComposite: !hasCustomCaseHelp)
+          help.externalDefaultDescription = {
+            ($0 as? Value).flatMap {
+              hasCustomCaseHelp && $0 != value ? nil : flagName(for: $0)
+            }
+          }
 
           return ArgumentDefinition.flag(
             name: name,
