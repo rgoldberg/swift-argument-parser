@@ -671,7 +671,9 @@ extension ArgumentDefinition {
     parsingStrategy: ArgumentDefinition.ParsingStrategy, initialValue: V?,
     update: Update
   ) -> ArgumentDefinition {
-    ArgumentDefinition(
+    var help = help
+    help.isEnumerableFlagCase = true
+    return ArgumentDefinition(
       kind: .name(key: caseKey, specification: name), help: help,
       completion: .default, parsingStrategy: parsingStrategy, update: update,
       initial: { origin, values in

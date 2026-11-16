@@ -109,6 +109,13 @@ extension ArgumentDecoder {
   private func definition(forKey key: InputKey) -> ArgumentDefinition? {
     argumentSet?.content.first { $0.help.keys.contains(key) }
   }
+
+  fileprivate func value(
+    forKey key: InputKey, parsing arguments: [String]
+  ) throws -> Any? {
+    guard let argumentSet else { throw ParserError.invalidState }
+    return try argumentSet.value(forKey: key, parsing: arguments)
+  }
 }
 
 extension ArgumentDecoder: ArgumentParserDecoder {
@@ -124,6 +131,13 @@ extension ArgumentDecoder: ArgumentParserDecoder {
   public func argumentName(forKey key: some CodingKey) -> String {
     argumentName(forKey: InputKey(codingKey: key, path: codingPath))
   }
+
+  public func value(
+    forKey key: some CodingKey, parsing arguments: [String]
+  ) throws -> Any? {
+    try value(
+      forKey: InputKey(codingKey: key, path: codingPath), parsing: arguments)
+  }
 }
 
 extension SingleValueDecoder: ArgumentParserDecoder {
@@ -138,6 +152,13 @@ extension SingleValueDecoder: ArgumentParserDecoder {
   public func argumentName(forKey key: some CodingKey) -> String {
     underlying.argumentName(
       forKey: InputKey(codingKey: key, path: codingPath))
+  }
+
+  public func value(
+    forKey key: some CodingKey, parsing arguments: [String]
+  ) throws -> Any? {
+    try underlying.value(
+      forKey: InputKey(codingKey: key, path: codingPath), parsing: arguments)
   }
 }
 

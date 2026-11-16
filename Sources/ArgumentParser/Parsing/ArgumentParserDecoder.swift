@@ -83,6 +83,27 @@ public protocol ArgumentParserDecoder: Decoder {
   ///
   /// - Returns: The name of the argument for `key`.
   func argumentName(forKey key: some CodingKey) -> String
+
+  /// Returns the value that the property for `key` would have if the command
+  /// line supplied only `arguments` for it.
+  ///
+  /// Use this to obtain a value that only ArgumentParser can create from an
+  /// external default (e.g., via the `transform` closure of an option), then
+  /// pass it to `ExternallyDefaultable.init(externalDefault:)`.
+  ///
+  /// - Parameters:
+  ///   - key: A `CodingKey` from the same `CodingKeys` enum used in the
+  ///     surrounding `container(keyedBy:)` call.
+  ///   - arguments: For an option or a positional argument, its values; for a
+  ///     flag, the names of its flags, without any dash prefix (e.g.,
+  ///     `no-color` for `--no-color`).
+  ///
+  /// - Returns: The value, or `nil` if the property would have none.
+  ///
+  /// - Throws: An error if any of `arguments` is invalid for the property.
+  func value(
+    forKey key: some CodingKey, parsing arguments: [String]
+  ) throws -> Any?
 }
 
 // MARK: - ArgumentValueSource
@@ -169,16 +190,38 @@ public protocol ExternallyDefaulted {
 
 /// An external default value of a parsable property.
 public struct ExternalDefault {
-  /// The value, which help output describes like a declared default value of
-  /// the property, or `nil` to show no value (e.g., because the value is
-  /// secret).
-  public var value: Any?
+  fileprivate enum Source {
+    case arguments([String], isValueShown: Bool)
+    case value(Any?)
+  }
+
+  fileprivate var source: Source
 
   /// Creates an external default value.
   ///
-  /// - Parameter value: The value, or `nil` to show no value.
+  /// - Parameter value: The value, which help output describes like a
+  ///   declared default value of the property, or `nil` to show no value
+  ///   (e.g., because the value is secret).
   public init(value: Any?) {
-    self.value = value
+    source = .value(value)
+  }
+
+  /// Creates an external default value that ArgumentParser parses from
+  /// `arguments`, exactly like
+  /// `ArgumentParserDecoder.value(forKey:parsing:)`.
+  ///
+  /// The property has no external default value if any of `arguments` is
+  /// invalid for it.
+  ///
+  /// - Parameters:
+  ///   - arguments: For an option or a positional argument, its values; for a
+  ///     flag, the names of its flags, without any dash prefix (e.g.,
+  ///     `no-color` for `--no-color`).
+  ///   - isValueShown: Whether help output describes the value like a declared
+  ///     default value of the property; pass `false` to show no value (e.g.,
+  ///     because the value is secret).
+  public init(arguments: [String], isValueShown: Bool = true) {
+    source = .arguments(arguments, isValueShown: isValueShown)
   }
 }
 
@@ -194,9 +237,20 @@ extension ArgumentSet {
       guard
         let externalDefault = definition.help.externalDefault?(commandStack)
       else { return definition }
+      let shownValue: Any?
+      switch externalDefault.source {
+      case .arguments(let arguments, let isValueShown):
+        guard
+          let key = definition.help.keys.first,
+          let value = try? value(forKey: key, parsing: arguments)
+        else { return definition }
+        shownValue = isValueShown ? value : nil
+      case .value(let value):
+        shownValue = value
+      }
       var definition = definition
       definition.help.options.insert(.isOptional)
-      definition.help.defaultValue = externalDefault.value.flatMap { value in
+      definition.help.defaultValue = shownValue.flatMap { value in
         if let describe = definition.help.externalDefaultDescription {
           return describe(value)
         }
@@ -206,6 +260,37 @@ extension ArgumentSet {
       return definition
     }
     return result
+  }
+
+  /// Returns the value that the property for `key` would have if the command
+  /// line supplied only `arguments` for it: the values of an option or of a
+  /// positional argument, or the names of flags, without any dash prefix.
+  func value(forKey key: InputKey, parsing arguments: [String]) throws -> Any? {
+    let definitions = content.filter { $0.help.keys.contains(key) }
+    var values = ParsedValues(originalInput: [])
+    for definition in definitions {
+      try definition.initial(InputOrigin(), &values)
+    }
+    for argument in arguments {
+      let origin = InputOrigin(element: .defaultValue)
+      let invalid = ParserError.unableToParseValue(
+        origin, nil, argument, forKey: key, originalError: nil)
+      switch definitions.first?.update {
+      case .unary(let update), .optionalUnary(_, let update):
+        try update(origin, nil, argument, &values)
+      case .nullary:
+        guard
+          let definition = definitions.first(where: {
+            $0.names.contains { $0.valueString == argument }
+          }),
+          case .nullary(let update) = definition.update
+        else { throw invalid }
+        try update(origin, nil, &values)
+      case nil:
+        throw invalid
+      }
+    }
+    return values.element(forKey: key)?.value
   }
 
   /// Returns the description of a default value whose type is known only
@@ -226,8 +311,14 @@ extension ArgumentSet {
 extension ArgumentDefinition {
   /// The name that identifies this argument on the command line, without any
   /// dash prefix.
+  ///
+  /// Each case of an `EnumerableFlag` has its own names, so the argument of
+  /// such a flag is instead identified by the property name converted like a
+  /// long name.
   var externalName: String {
-    names.preferredName?.valueString ?? valueName
+    (help.isEnumerableFlagCase
+      ? help.keys.first?.name.convertedToSnakeCase(separator: "-")
+      : names.preferredName?.valueString) ?? valueName
   }
 }
 

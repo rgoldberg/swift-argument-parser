@@ -69,6 +69,9 @@ struct ArgumentDefinition {
     /// if it describes one differently than an option does.
     var externalDefaultDescription: ((Any) -> String?)?
 
+    /// Whether the argument is 1 case of an `EnumerableFlag`.
+    var isEnumerableFlagCase = false
+
     init(
       allValueStrings: [String],
       options: Options,

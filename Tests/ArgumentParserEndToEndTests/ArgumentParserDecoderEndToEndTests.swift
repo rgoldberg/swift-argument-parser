@@ -325,3 +325,138 @@ extension ArgumentParserDecoderEndToEndTests {
         """)
   }
 }
+
+// MARK: - Parsed external defaults
+
+private enum Tone: EnumerableFlag {
+  case warm
+  case cool
+  case dim
+}
+
+/// A command that obtains the external default value of each property by
+/// having ArgumentParser parse arguments.
+private struct Parsed: ParsableCommand, ExternallyDefaulted {
+  enum CodingKeys: String, CodingKey, CaseIterable {
+    case shape
+    case tones
+    case point
+    case points
+    case color
+    case size
+  }
+
+  static let arguments = [
+    "shape": ["square"],
+    "tones": ["dim", "warm"],
+    "point": ["3"],
+    "points": ["4", "5"],
+    "color": ["no-color"],
+    // Invalid, so `size` has no external default value.
+    "size": ["x"],
+  ]
+
+  @Flag var shape: Shape
+  @Flag var tones: [Tone] = []
+  @Option(transform: Point.init) var point: Point
+  @Option(transform: Point.init) var points: [Point] = []
+  @Flag(inversion: .prefixedNo) var color = true
+  @Option var size = 1
+
+  var names: [String: String] = [:]
+
+  init() {}
+
+  init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let decoder = try #require(decoder as? any ArgumentParserDecoder)
+    for key in CodingKeys.allCases {
+      names[key.stringValue] = decoder.argumentName(forKey: key)
+    }
+    func wrapper<Wrapper: Decodable & ExternallyDefaultable>(
+      forKey key: CodingKeys
+    ) throws -> Wrapper {
+      let value =
+        decoder.valueSource(forKey: key) == .commandLine
+        ? nil
+        : try? decoder.value(
+          forKey: key, parsing: Self.arguments[key.stringValue] ?? [])
+      return try (value as? Wrapper.Value).map(Wrapper.init(externalDefault:))
+        ?? container.decode(Wrapper.self, forKey: key)
+    }
+    _shape = try wrapper(forKey: .shape)
+    _tones = try wrapper(forKey: .tones)
+    _point = try wrapper(forKey: .point)
+    _points = try wrapper(forKey: .points)
+    _color = try wrapper(forKey: .color)
+    _size = try wrapper(forKey: .size)
+  }
+
+  static func externalDefault(
+    forPropertyNamed propertyName: String,
+    argumentName: String,
+    commandStack: [String]
+  ) -> ExternalDefault? {
+    arguments[propertyName].map {
+      // A secret value is not shown.
+      ExternalDefault(arguments: $0, isValueShown: propertyName != "color")
+    }
+  }
+}
+
+extension ArgumentParserDecoderEndToEndTests {
+  @Test func parsedExternalDefault() throws {
+    let unsupplied = try Parsed.parse([])
+    #expect(unsupplied.shape == .square)
+    #expect(unsupplied.tones == [.dim, .warm])
+    #expect(unsupplied.point.x == 3)
+    #expect(unsupplied.points.map(\.x) == [4, 5])
+    #expect(!unsupplied.color)
+    #expect(unsupplied.size == 1)
+
+    let supplied = try Parsed.parse([
+      "--round", "--cool", "--point", "6", "--points", "7", "--color",
+      "--size", "2",
+    ])
+    #expect(supplied.shape == .round)
+    #expect(supplied.tones == [.cool])
+    #expect(supplied.point.x == 6)
+    #expect(supplied.points.map(\.x) == [7])
+    #expect(supplied.color)
+    #expect(supplied.size == 2)
+  }
+
+  @Test func argumentNameOfEnumerableFlag() throws {
+    // An `EnumerableFlag` property is named after itself, not after the flag
+    // of its 1st case.
+    #expect(
+      try Parsed.parse([]).names == [
+        "shape": "shape",
+        "tones": "tones",
+        "point": "point",
+        "points": "points",
+        "color": "color",
+        "size": "size",
+      ])
+  }
+
+  @Test func parsedExternalDefaultHelp() {
+    // `--point` is no longer required, the secret value of `--color` is not
+    // shown, and the invalid value of `--size` is not used.
+    #expect(
+      Parsed.helpMessage() == """
+        USAGE: parsed [--round] [--square] [--oblong] [--warm] [--cool] [--dim] [--point <point>] [--points <points> ...] [--color] [--no-color] [--size <size>]
+
+        OPTIONS:
+          --round/--square/--oblong
+                                  (default: --square)
+          --warm/--cool/--dim
+          --point <point>
+          --points <points>
+          --color/--no-color
+          --size <size>           (default: 1)
+          -h, --help              Show help information.
+
+        """)
+  }
+}
