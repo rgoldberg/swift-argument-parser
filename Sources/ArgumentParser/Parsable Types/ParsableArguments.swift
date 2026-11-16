@@ -318,7 +318,26 @@ extension ArgumentSet {
 
         if let parsed = child.value as? ArgumentSetProvider {
           let key = InputKey(name: codingKey, parent: parent)
-          return parsed.argumentSet(for: key)
+          var argumentSet = parsed.argumentSet(for: key)
+          if let type = type as? any ExternallyDefaulted.Type {
+            argumentSet.content = argumentSet.content.map { definition in
+              // An argument of an option group is already attached to the
+              // type that declares it.
+              guard definition.help.externalDefault == nil else {
+                return definition
+              }
+              let argumentName = definition.externalName
+              var definition = definition
+              definition.help.externalDefault = { commandStack in
+                type.externalDefault(
+                  forPropertyNamed: key.name,
+                  argumentName: argumentName,
+                  commandStack: commandStack)
+              }
+              return definition
+            }
+          }
+          return argumentSet
         } else {
           let arg = ArgumentDefinition(
             unparsedKey: codingKey,

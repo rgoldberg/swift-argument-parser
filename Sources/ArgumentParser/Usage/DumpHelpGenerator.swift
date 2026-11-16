@@ -34,6 +34,7 @@ extension BidirectionalCollection where Element == ParsableCommand.Type {
     guard
       var arguments = self.last.map({
         ArgumentSet($0, visibility: .private, parent: nil)
+          .applyingExternalDefaults(commandStack: self)
       })
     else { return ArgumentSet() }
     self.versionArgumentDefinition().map { arguments.append($0) }

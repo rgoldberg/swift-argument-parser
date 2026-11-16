@@ -119,6 +119,94 @@ public protocol ExternallyDefaultable {
   init(externalDefault value: Value)
 }
 
+// MARK: - ExternallyDefaulted
+
+/// A parsable type whose properties can obtain default values from outside
+/// ArgumentParser, like a configuration file.
+///
+/// Conform a `ParsableArguments` or `ParsableCommand` type whose custom
+/// `init(from:)` uses external default values to this protocol, so that help &
+/// usage output reflect them: a property that has an external default value is
+/// shown as optional, with that value as its default value.
+///
+/// ```swift
+/// extension MyCommand: ExternallyDefaulted {
+///     static func externalDefault(
+///         forPropertyNamed propertyName: String,
+///         argumentName: String,
+///         commandStack: [String]
+///     ) -> ExternalDefault? {
+///         guard propertyName == "limit" else { return nil }
+///         return ExternalConfig.int(forKey: commandStack + [argumentName])
+///             .map { ExternalDefault(valueDescription: String($0)) }
+///     }
+/// }
+/// ```
+public protocol ExternallyDefaulted {
+  /// Returns the external default value of a property, if any.
+  ///
+  /// - Parameters:
+  ///   - propertyName: The name of the property.
+  ///   - argumentName: The name that identifies the argument for the property
+  ///     on the command line, without any dash prefix, exactly like
+  ///     `ArgumentParserDecoder.argumentName(forKey:)`.
+  ///   - commandStack: The command names from the root command to the command
+  ///     whose help or usage is being generated, inclusive, exactly like
+  ///     `ArgumentParserDecoder.commandStack`.
+  ///
+  /// - Returns: The external default value of the property, or `nil` if it has
+  ///   none.
+  static func externalDefault(
+    forPropertyNamed propertyName: String,
+    argumentName: String,
+    commandStack: [String]
+  ) -> ExternalDefault?
+}
+
+/// An external default value of a parsable property, as help output shows it.
+public struct ExternalDefault: Sendable, Hashable {
+  /// The description of the value, or `nil` to show no value (e.g., because
+  /// the value is secret).
+  public var valueDescription: String?
+
+  /// Creates an external default value.
+  ///
+  /// - Parameter valueDescription: The description of the value, or `nil` to
+  ///   show no value.
+  public init(valueDescription: String?) {
+    self.valueDescription = valueDescription
+  }
+}
+
+extension ArgumentSet {
+  /// Returns this argument set with each argument that has an external default
+  /// value marked as optional & showing that value as its default value.
+  func applyingExternalDefaults(
+    commandStack: some Sequence<ParsableCommand.Type>
+  ) -> ArgumentSet {
+    let commandStack = commandStack.map { $0._commandName }
+    var result = self
+    result.content = content.map { definition in
+      guard
+        let externalDefault = definition.help.externalDefault?(commandStack)
+      else { return definition }
+      var definition = definition
+      definition.help.options.insert(.isOptional)
+      definition.help.defaultValue = externalDefault.valueDescription
+      return definition
+    }
+    return result
+  }
+}
+
+extension ArgumentDefinition {
+  /// The name that identifies this argument on the command line, without any
+  /// dash prefix.
+  var externalName: String {
+    names.preferredName?.valueString ?? valueName
+  }
+}
+
 extension Argument: ExternallyDefaultable {
   public init(externalDefault value: Value) {
     self.init(_parsedValue: .value(value))

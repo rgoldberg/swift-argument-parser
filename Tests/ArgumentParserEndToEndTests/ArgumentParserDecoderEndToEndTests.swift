@@ -203,3 +203,61 @@ extension ArgumentParserDecoderEndToEndTests {
     #expect(supplied.appIDs == [5])
   }
 }
+
+// MARK: - ExternallyDefaulted
+
+extension Group: ExternallyDefaulted {
+  static func externalDefault(
+    forPropertyNamed propertyName: String,
+    argumentName: String,
+    commandStack: [String]
+  ) -> ExternalDefault? {
+    propertyName == "color"
+      ? ExternalDefault(
+        valueDescription: (commandStack + [argumentName]).joined(separator: "."))
+      : nil
+  }
+}
+
+extension Sub: ExternallyDefaulted {
+  static func externalDefault(
+    forPropertyNamed propertyName: String,
+    argumentName: String,
+    commandStack: [String]
+  ) -> ExternalDefault? {
+    switch propertyName {
+    case "country":
+      // A secret value has no description.
+      ExternalDefault(valueDescription: nil)
+    case "downloadLimit":
+      ExternalDefault(
+        valueDescription: (commandStack + [argumentName]).joined(separator: "."))
+    default:
+      nil
+    }
+  }
+}
+
+extension ArgumentParserDecoderEndToEndTests {
+  @Test func externalDefaultHelp() {
+    // `--country` is no longer required, but its secret value is not shown.
+    #expect(
+      Root.helpMessage(for: Sub.self) == """
+        USAGE: root sub [--country <country>] [--max <max>] [--output-directory <output-directory>] [-q] [<target>] [<app-id> ...] [--color <color>]
+
+        ARGUMENTS:
+          <target>
+          <app-id>
+
+        OPTIONS:
+          --country <country>
+          -m, --max, --download-limit <max>
+                                  (default: root.sub.max)
+          --output-directory <output-directory>
+          -q
+          --color <color>         (default: root.sub.color)
+          -h, --help              Show help information.
+
+        """)
+  }
+}

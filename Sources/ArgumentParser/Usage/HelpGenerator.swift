@@ -159,7 +159,8 @@ internal struct HelpGenerator {
     else { fatalError() }
 
     let currentArgSet = ArgumentSet(
-      currentCommand, visibility: visibility, parent: nil)
+      currentCommand, visibility: visibility, parent: nil
+    ).applyingExternalDefaults(commandStack: commandStack)
     self.commandStack = commandStack
 
     // Build the tool name and subcommand name from the command configuration
@@ -542,6 +543,7 @@ extension BidirectionalCollection where Element == ParsableCommand.Type {
     guard
       var arguments = self.last.map({
         ArgumentSet($0, visibility: visibility, parent: nil)
+          .applyingExternalDefaults(commandStack: self)
       })
     else { return ArgumentSet() }
     self.versionArgumentDefinition().map { arguments.append($0) }

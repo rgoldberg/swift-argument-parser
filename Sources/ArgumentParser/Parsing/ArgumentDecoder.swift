@@ -103,9 +103,7 @@ extension ArgumentDecoder {
   }
 
   fileprivate func argumentName(forKey key: InputKey) -> String {
-    definition(forKey: key).map {
-      $0.names.preferredName?.valueString ?? $0.valueName
-    } ?? key.name.convertedToSnakeCase(separator: "-")
+    definition(forKey: key)?.externalName ?? key.name.convertedToSnakeCase(separator: "-")
   }
 
   private func definition(forKey key: InputKey) -> ArgumentDefinition? {

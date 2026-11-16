@@ -61,6 +61,10 @@ struct ArgumentDefinition {
     var visibility: ArgumentVisibility
     var parentTitle: String
 
+    /// Returns the external default value of the argument, if any, for the
+    /// names of a command stack.
+    var externalDefault: (([String]) -> ExternalDefault?)?
+
     init(
       allValueStrings: [String],
       options: Options,
