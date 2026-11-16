@@ -215,7 +215,9 @@ extension CommandParser {
     // Decode the values from ParsedValues into the ParsableCommand:
     let decoder = ArgumentDecoder(
       values: values,
-      previouslyDecoded: decodedArguments
+      previouslyDecoded: decodedArguments,
+      commandType: currentNode.element,
+      argumentSet: parser.argumentSet
     )
     var decodedResult: ParsableCommand
     do {

@@ -29,13 +29,24 @@ struct DecodedArguments {
 
 /// A decoder that decodes from parsed command-line arguments.
 final class ArgumentDecoder: Decoder {
-  init(values: ParsedValues, previouslyDecoded: [DecodedArguments] = []) {
+  init(
+    values: ParsedValues,
+    previouslyDecoded: [DecodedArguments] = [],
+    commandType: ParsableCommand.Type? = nil,
+    argumentSet: ArgumentSet? = nil
+  ) {
     self.values = values
     self.previouslyDecoded = previouslyDecoded
+    self.commandType = commandType
+    self.argumentSet = argumentSet
     self.usedOrigins = InputOrigin()
   }
 
   let values: ParsedValues
+  /// The command that this decoder decodes, if any.
+  let commandType: ParsableCommand.Type?
+  /// The argument definitions of the command that this decoder decodes, if any.
+  let argumentSet: ArgumentSet?
   var usedOrigins: InputOrigin
   var nextCommandIndex = 0
   var previouslyDecoded: [DecodedArguments] = []
@@ -79,16 +90,48 @@ extension ArgumentDecoder {
 
 // MARK: - ArgumentParserDecoder conformance
 
-extension ArgumentDecoder: ArgumentParserDecoder {
-  /// Returns `true` when the value for `key` was provided on the command line;
-  /// `false` when SAP used the property's declared default value or when the key is absent.
-  public func wasParsed(_ key: some CodingKey) -> Bool {
-    values.element(forKey: .init(codingKey: key, path: codingPath))?.inputOrigin.elements.contains { $0.baseIndex != nil } ?? false
+extension ArgumentDecoder {
+  fileprivate func valueSource(forKey key: InputKey) -> ArgumentValueSource {
+    guard let element = values.element(forKey: key) else { return .missing }
+    return element.inputOrigin.elements.contains { $0.baseIndex != nil }
+      ? .commandLine : .defaultValue
   }
 
-  /// Command names from root command to the current (sub)command.
+  fileprivate func argumentName(forKey key: InputKey) -> String {
+    argumentSet?.content
+      .first { $0.help.keys.contains(key) }?
+      .names.preferredName?.valueString
+      ?? key.name.convertedToSnakeCase(separator: "-")
+  }
+}
+
+extension ArgumentDecoder: ArgumentParserDecoder {
   public var commandStack: [String] {
-    previouslyDecoded.compactMap { $0.commandType?._commandName }
+    (previouslyDecoded.compactMap(\.commandType) + [commandType].compactMap { $0 })
+      .map { $0._commandName }
+  }
+
+  public func valueSource(forKey key: some CodingKey) -> ArgumentValueSource {
+    valueSource(forKey: InputKey(codingKey: key, path: codingPath))
+  }
+
+  public func argumentName(forKey key: some CodingKey) -> String {
+    argumentName(forKey: InputKey(codingKey: key, path: codingPath))
+  }
+}
+
+extension SingleValueDecoder: ArgumentParserDecoder {
+  public var commandStack: [String] {
+    underlying.commandStack
+  }
+
+  public func valueSource(forKey key: some CodingKey) -> ArgumentValueSource {
+    underlying.valueSource(forKey: InputKey(codingKey: key, path: codingPath))
+  }
+
+  public func argumentName(forKey key: some CodingKey) -> String {
+    underlying.argumentName(
+      forKey: InputKey(codingKey: key, path: codingPath))
   }
 }
 
