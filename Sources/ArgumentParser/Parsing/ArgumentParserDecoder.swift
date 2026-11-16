@@ -74,9 +74,13 @@ public protocol ArgumentParserDecoder: Decoder {
   ///
   /// For an option or flag, this is its preferred name: its first long name,
   /// or its first short name if it has no long name (e.g., `download-limit`
-  /// for `--download-limit`). For a positional argument, which has no name,
-  /// this is its value name: the `valueName` of its help, if any, otherwise
-  /// the property name converted like a long name.
+  /// for `--download-limit`). A flag that has an inversion is identified by
+  /// its preferred name without the prefix of the inversion (e.g., `index`
+  /// for `--enable-index` & `--disable-index`), and an `EnumerableFlag`
+  /// property, each of whose cases has its own names, by the property name
+  /// converted like a long name. For a positional argument, which has no
+  /// name, this is its value name: the `valueName` of its help, if any,
+  /// otherwise the property name converted like a long name.
   ///
   /// - Parameter key: A `CodingKey` from the same `CodingKeys` enum used in the
   ///   surrounding `container(keyedBy:)` call.
@@ -312,13 +316,11 @@ extension ArgumentDefinition {
   /// The name that identifies this argument on the command line, without any
   /// dash prefix.
   ///
-  /// Each case of an `EnumerableFlag` has its own names, so the argument of
-  /// such a flag is instead identified by the property name converted like a
-  /// long name.
+  /// A flag that has an inversion is identified by its name without the prefix
+  /// of the inversion, and the argument of an `EnumerableFlag`, each of whose
+  /// cases has its own names, by the property name converted like a long name.
   var externalName: String {
-    (help.isEnumerableFlagCase
-      ? help.keys.first?.name.convertedToSnakeCase(separator: "-")
-      : names.preferredName?.valueString) ?? valueName
+    help.externalName ?? names.preferredName?.valueString ?? valueName
   }
 }
 

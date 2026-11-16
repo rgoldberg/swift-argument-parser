@@ -69,8 +69,10 @@ struct ArgumentDefinition {
     /// if it describes one differently than an option does.
     var externalDefaultDescription: ((Any) -> String?)?
 
-    /// Whether the argument is 1 case of an `EnumerableFlag`.
-    var isEnumerableFlagCase = false
+    /// The name that identifies the argument of a property that has multiple
+    /// argument definitions, each with its own names (i.e., a flag that has an
+    /// inversion, or an `EnumerableFlag`), without any dash prefix.
+    var externalName: String?
 
     init(
       allValueStrings: [String],

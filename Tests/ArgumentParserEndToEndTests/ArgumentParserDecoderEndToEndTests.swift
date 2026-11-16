@@ -343,6 +343,7 @@ private struct Parsed: ParsableCommand, ExternallyDefaulted {
     case point
     case points
     case color
+    case sound
     case size
   }
 
@@ -352,6 +353,7 @@ private struct Parsed: ParsableCommand, ExternallyDefaulted {
     "point": ["3"],
     "points": ["4", "5"],
     "color": ["no-color"],
+    "sound": ["disable-sound"],
     // Invalid, so `size` has no external default value.
     "size": ["x"],
   ]
@@ -361,6 +363,7 @@ private struct Parsed: ParsableCommand, ExternallyDefaulted {
   @Option(transform: Point.init) var point: Point
   @Option(transform: Point.init) var points: [Point] = []
   @Flag(inversion: .prefixedNo) var color = true
+  @Flag(inversion: .prefixedEnableDisable) var sound = true
   @Option var size = 1
 
   var names: [String: String] = [:]
@@ -389,6 +392,7 @@ private struct Parsed: ParsableCommand, ExternallyDefaulted {
     _point = try wrapper(forKey: .point)
     _points = try wrapper(forKey: .points)
     _color = try wrapper(forKey: .color)
+    _sound = try wrapper(forKey: .sound)
     _size = try wrapper(forKey: .size)
   }
 
@@ -412,23 +416,26 @@ extension ArgumentParserDecoderEndToEndTests {
     #expect(unsupplied.point.x == 3)
     #expect(unsupplied.points.map(\.x) == [4, 5])
     #expect(!unsupplied.color)
+    #expect(!unsupplied.sound)
     #expect(unsupplied.size == 1)
 
     let supplied = try Parsed.parse([
       "--round", "--cool", "--point", "6", "--points", "7", "--color",
-      "--size", "2",
+      "--enable-sound", "--size", "2",
     ])
     #expect(supplied.shape == .round)
     #expect(supplied.tones == [.cool])
     #expect(supplied.point.x == 6)
     #expect(supplied.points.map(\.x) == [7])
     #expect(supplied.color)
+    #expect(supplied.sound)
     #expect(supplied.size == 2)
   }
 
-  @Test func argumentNameOfEnumerableFlag() throws {
+  @Test func argumentNameOfMultipleDefinitions() throws {
     // An `EnumerableFlag` property is named after itself, not after the flag
-    // of its 1st case.
+    // of its 1st case, and a flag that has an inversion is named without the
+    // prefix of the inversion.
     #expect(
       try Parsed.parse([]).names == [
         "shape": "shape",
@@ -436,6 +443,7 @@ extension ArgumentParserDecoderEndToEndTests {
         "point": "point",
         "points": "points",
         "color": "color",
+        "sound": "sound",
         "size": "size",
       ])
   }
@@ -445,7 +453,7 @@ extension ArgumentParserDecoderEndToEndTests {
     // shown, and the invalid value of `--size` is not used.
     #expect(
       Parsed.helpMessage() == """
-        USAGE: parsed [--round] [--square] [--oblong] [--warm] [--cool] [--dim] [--point <point>] [--points <points> ...] [--color] [--no-color] [--size <size>]
+        USAGE: parsed <options>
 
         OPTIONS:
           --round/--square/--oblong
@@ -454,6 +462,8 @@ extension ArgumentParserDecoderEndToEndTests {
           --point <point>
           --points <points>
           --color/--no-color
+          --enable-sound/--disable-sound
+                                  (default: --disable-sound)
           --size <size>           (default: 1)
           -h, --help              Show help information.
 

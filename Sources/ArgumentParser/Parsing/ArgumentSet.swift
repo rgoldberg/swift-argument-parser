@@ -165,6 +165,9 @@ extension ArgumentSet {
       allValueStrings: [], options: [.isOptional], help: help,
       defaultValue: nil, key: key, isComposite: false)
     disableHelp.externalDefaultDescription = { _ in nil }
+    let externalName = name.makeNames(key).preferredName?.valueString
+    enableHelp.externalName = externalName
+    disableHelp.externalName = externalName
 
     let enableArg = ArgumentDefinition(
       kind: .named(enableNames), help: enableHelp, completion: .default,

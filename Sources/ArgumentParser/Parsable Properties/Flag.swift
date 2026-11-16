@@ -672,7 +672,7 @@ extension ArgumentDefinition {
     update: Update
   ) -> ArgumentDefinition {
     var help = help
-    help.isEnumerableFlagCase = true
+    help.externalName = key.name.convertedToSnakeCase(separator: "-")
     return ArgumentDefinition(
       kind: .name(key: caseKey, specification: name), help: help,
       completion: .default, parsingStrategy: parsingStrategy, update: update,
