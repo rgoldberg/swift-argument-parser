@@ -245,6 +245,14 @@ private struct Plain: ParsableArguments {
   @Option var size = "m"
 }
 
+private struct Point {
+  var x: Int
+
+  init(_ argument: String) throws {
+    x = try #require(Int(argument))
+  }
+}
+
 /// A command that returns an external default value for every property that
 /// it is asked about.
 private struct Flags: ParsableCommand, ExternallyDefaulted {
@@ -252,6 +260,7 @@ private struct Flags: ParsableCommand, ExternallyDefaulted {
   @Flag(inversion: .prefixedNo) var sound = true
   @Flag var loud = false
   @Flag var shape: Shape
+  @Option(transform: Point.init) var point: Point
   @OptionGroup var plain: Plain
 
   static func externalDefault(
@@ -264,6 +273,8 @@ private struct Flags: ParsableCommand, ExternallyDefaulted {
       ExternalDefault(value: false)
     case "shape":
       ExternalDefault(value: Shape.square)
+    case "point":
+      try? ExternalDefault(value: Point("1"))
     default:
       ExternalDefault(value: "\(propertyName).\(argumentName)")
     }
@@ -294,11 +305,12 @@ extension ArgumentParserDecoderEndToEndTests {
   }
 
   @Test func externalDefaultHelpForFlags() {
-    // A flag is described by the name that gives its value, and the property
-    // of an option group is not that of the type that includes it.
+    // A flag is described by the name that gives its value, a value that is
+    // not `ExpressibleByArgument` is not described, and the property of an
+    // option group is not that of the type that includes it.
     #expect(
       Flags.helpMessage() == """
-        USAGE: flags [--color] [--no-color] [--sound] [--no-sound] [--loud] [--round] [--square] [--oblong] [--size <size>]
+        USAGE: flags [--color] [--no-color] [--sound] [--no-sound] [--loud] [--round] [--square] [--oblong] [--point <point>] [--size <size>]
 
         OPTIONS:
           --color/--no-color      (default: --no-color)
@@ -306,6 +318,7 @@ extension ArgumentParserDecoderEndToEndTests {
           --loud
           --round/--square/--oblong
                                   (default: --square)
+          --point <point>
           --size <size>           (default: m)
           -h, --help              Show help information.
 

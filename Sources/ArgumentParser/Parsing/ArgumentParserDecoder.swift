@@ -220,7 +220,6 @@ extension ArgumentSet {
       return String(describing: value.rawValue)
     }
     return (value as? any ExpressibleByArgument)?.defaultValueDescription
-      ?? String(describing: value)
   }
 }
 
